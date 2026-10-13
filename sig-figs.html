@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Significant Figures Calculator: Count, Round &amp; Calculate | ChemSteps</title>
+  <meta name="description" content="Free sig fig calculator. Count significant figures with each digit highlighted, round to any number of sig figs, and add, subtract, multiply or divide using the correct sig fig rules, with steps.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Steps</span></a>
+      <nav>
+        <a href="molar-mass.html">Molar mass</a>
+        <a href="dilution.html">Dilution</a>
+        <a href="sig-figs.html" aria-current="page">Sig figs</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Significant figures calculator</h1>
+    <p class="lead">Count sig figs, round a number, or do math with the right sig fig rules. Every answer explains which rule was used.</p>
+
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-tab="count">Count</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="round">Round</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="calc">Calculate</button>
+      </div>
+
+      <form id="tab-count" autocomplete="off">
+        <label for="count-in">Number</label>
+        <div class="row">
+          <input type="text" id="count-in" inputmode="decimal" placeholder="e.g. 0.004050 or 1.20e3">
+          <button type="submit" style="flex: 0 0 auto">Count</button>
+        </div>
+        <p class="hint">Scientific notation works: <span class="math">1.20e3</span> or <span class="math">1.20x10^3</span>.</p>
+        <div class="examples">
+          <button type="button" data-v="0.004050">0.004050</button>
+          <button type="button" data-v="1200">1200</button>
+          <button type="button" data-v="1200.">1200.</button>
+          <button type="button" data-v="1005">1005</button>
+          <button type="button" data-v="6.022e23">6.022e23</button>
+        </div>
+      </form>
+
+      <form id="tab-round" autocomplete="off" hidden>
+        <div class="row">
+          <div>
+            <label for="round-in">Number</label>
+            <input type="text" id="round-in" inputmode="decimal" placeholder="e.g. 0.0045678">
+          </div>
+          <div style="flex: 0 0 120px">
+            <label for="round-n">Sig figs</label>
+            <input type="text" id="round-n" inputmode="numeric" value="3">
+          </div>
+        </div>
+        <button type="submit" style="margin-top: 12px">Round</button>
+      </form>
+
+      <form id="tab-calc" autocomplete="off" hidden>
+        <div class="row">
+          <div>
+            <label for="calc-a">First number</label>
+            <input type="text" id="calc-a" inputmode="decimal" placeholder="e.g. 12.11">
+          </div>
+          <div style="flex: 0 0 90px">
+            <label for="calc-op">Operation</label>
+            <select id="calc-op">
+              <option>+</option><option>-</option><option>×</option><option>÷</option>
+            </select>
+          </div>
+          <div>
+            <label for="calc-b">Second number</label>
+            <input type="text" id="calc-b" inputmode="decimal" placeholder="e.g. 18.0">
+          </div>
+        </div>
+        <button type="submit" style="margin-top: 12px">Calculate</button>
+      </form>
+
+      <div id="sf-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>Rules for counting significant figures</h2>
+      <ol>
+        <li><strong>Non-zero digits are always significant.</strong> 4.56 has 3.</li>
+        <li><strong>Zeros between non-zero digits are significant.</strong> 1005 has 4.</li>
+        <li><strong>Leading zeros are never significant.</strong> They only place the decimal point: 0.0045 has 2.</li>
+        <li><strong>Trailing zeros after a decimal point are significant.</strong> 2.500 has 4.</li>
+        <li><strong>Trailing zeros in a whole number with no decimal point are ambiguous.</strong> 1200 could have 2, 3 or 4. Write 1.20 × 10³ (3 sig figs) or 1200. (4 sig figs) to be clear.</li>
+      </ol>
+
+      <h2>Sig fig rules for calculations</h2>
+      <h3>Multiplying and dividing</h3>
+      <p>The answer has the same number of <strong>significant figures</strong> as the value with the fewest. Example: 4.56 ÷ 1.4 = 3.257… → <strong>3.3</strong> (1.4 has only 2 sig figs).</p>
+      <h3>Adding and subtracting</h3>
+      <p>The answer has the same number of <strong>decimal places</strong> as the value with the fewest. Example: 12.11 + 18.0 = 30.11 → <strong>30.1</strong> (18.0 only goes to the tenths place).</p>
+      <h3>Multi-step problems</h3>
+      <p>Keep extra digits in the middle steps and round only the final answer. Rounding at every step adds error.</p>
+
+      <h3>Exact numbers</h3>
+      <p>Counted numbers (3 beakers) and defined conversions (1000 mL = 1 L) have unlimited sig figs. They never limit your answer.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemSteps — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain, formatSigFigs } = Chem;
+    const out = $("sf-result");
+    const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+    function placeName(p) {
+      const names = { "-3": "thousands", "-2": "hundreds", "-1": "tens", "0": "ones", "1": "tenths", "2": "hundredths", "3": "thousandths" };
+      return names[p] || (p > 0 ? `${plural(p, "decimal place")}` : `10${Chem.toSuperscript(-p)} place`);
+    }
+
+    function digitsHtml(info, raw) {
+      const p = info.parsed;
+      const sign = p.sign < 0 ? "−" : "";
+      const html = info.digits.map((d) => d.char === "." ? "." : `<span class="${d.significant ? "sig" : "not"}">${d.char}</span>`).join("");
+      return `${sign}${html}${p.scientific ? ` × 10${Chem.toSuperscript(p.exponent)}` : ""}`;
+    }
+
+    function count() {
+      const raw = $("count-in").value;
+      const info = Chem.countSigFigs(raw);
+      if (!info) { out.innerHTML = `<p class="error">Enter a number, like 0.00450 or 1.20e3.</p>`; return; }
+      const reasons = [];
+      const m = info.parsed.mantissa;
+      if (info.isZero) reasons.push("The value is zero, so only zeros after the decimal point count as measured digits.");
+      else {
+        if (/0/.test(m.slice(0, m.search(/[1-9]/)))) reasons.push("Leading zeros are not significant. They only show where the decimal point is.");
+        if (/[1-9]0+[1-9]/.test(m.replace(".", ""))) reasons.push("Zeros between non-zero digits are significant.");
+        if (m.includes(".") && /[1-9][\d.]*0$/.test(m)) reasons.push("Trailing zeros after a decimal point are significant.");
+        if (info.ambiguous) reasons.push("Trailing zeros in a whole number with no decimal point are ambiguous. This counts them as not significant (the usual textbook rule).");
+        if (info.parsed.scientific) reasons.push("In scientific notation, only the digits in front of × 10ⁿ count.");
+        reasons.push("Non-zero digits are always significant.");
+      }
+      let ambig = "";
+      if (info.ambiguous) {
+        const total = info.digits.filter((d) => /\d/.test(d.char)).length - (m.match(/^0*/)[0].length);
+        const v = info.parsed.value;
+        const options = [];
+        for (let n = info.count; n <= total; n++) options.push(`${formatSigFigs(v, n)} → ${n}`);
+        ambig = `<p class="hint">To show exactly how precise it is, write it in scientific notation: ${options.join(" &nbsp;·&nbsp; ")}</p>`;
+      }
+      out.innerHTML = `
+        <p class="answer">${plural(info.count, "significant figure")}${info.ambiguous ? ` <small>(could be more, see below)</small>` : ""}</p>
+        <p class="digits" aria-label="Significant digits highlighted">${digitsHtml(info, raw)}</p>
+        <p class="hint">Highlighted digits are significant.</p>
+        <ul class="steps">${reasons.map((r) => `<li>${r}</li>`).join("")}</ul>
+        ${ambig}`;
+    }
+
+    function round() {
+      const raw = $("round-in").value;
+      const info = Chem.countSigFigs(raw);
+      const n = parseInt($("round-n").value, 10);
+      if (!info) { out.innerHTML = `<p class="error">Enter a number to round.</p>`; return; }
+      if (!(n >= 1 && n <= 15)) { out.innerHTML = `<p class="error">Sig figs must be a whole number from 1 to 15.</p>`; return; }
+      const v = info.parsed.value;
+      const answer = formatSigFigs(v, n);
+      const steps = [
+        `Find the first non-zero digit and count ${n} digit${n === 1 ? "" : "s"} from there.`,
+        `Look at the next digit: 5 or more rounds up, 4 or less rounds down.`,
+        `Keep zeros that are needed to hold place value. If trailing zeros would be ambiguous, use scientific notation.`,
+      ];
+      out.innerHTML = `
+        <p class="answer">${answer} <small>${esc(raw.trim())} rounded to ${plural(n, "sig fig")}</small></p>
+        <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+    }
+
+    function calc() {
+      const a = $("calc-a").value.trim();
+      const b = $("calc-b").value.trim();
+      const op = $("calc-op").value;
+      let r;
+      try { r = Chem.sigFigArithmetic(a, op, b); }
+      catch (e) { out.innerHTML = `<p class="error">${esc(e.message)}</p>`; return; }
+      if (!r) { out.innerHTML = `<p class="error">Enter two numbers, like 12.11 and 18.0.</p>`; return; }
+      const steps = [`Calculate: <span class="math">${esc(a)} ${op} ${esc(b)} = ${plain(r.exact, 10)}</span>`];
+      if (r.rule === "decimal") {
+        steps.push(`For + and −, the answer keeps the <strong>decimal place</strong> of the least precise number.`);
+        steps.push(`${esc(a)} goes to the ${placeName(r.placeA)}; ${esc(b)} goes to the ${placeName(r.placeB)}. The least precise is the <strong>${placeName(r.place)}</strong>.`);
+        steps.push(`Round to the ${placeName(r.place)}: <strong>${r.answer}</strong>`);
+      } else {
+        steps.push(`For × and ÷, the answer keeps the <strong>number of sig figs</strong> of the value with the fewest.`);
+        steps.push(`${esc(a)} has ${plural(r.a.count, "sig fig")}; ${esc(b)} has ${plural(r.b.count, "sig fig")}. Use <strong>${r.sf}</strong>.`);
+        steps.push(`Round to ${plural(r.sf, "sig fig")}: <strong>${r.answer}</strong>`);
+      }
+      out.innerHTML = `
+        <p class="answer">${r.answer}</p>
+        <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+    }
+
+    // Tabs
+    document.querySelectorAll(".tabs button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b === btn));
+        ["count", "round", "calc"].forEach((t) => { $("tab-" + t).hidden = t !== btn.dataset.tab; });
+        out.innerHTML = "";
+      });
+    });
+
+    $("tab-count").addEventListener("submit", (e) => { e.preventDefault(); count(); });
+    $("tab-round").addEventListener("submit", (e) => { e.preventDefault(); round(); });
+    $("tab-calc").addEventListener("submit", (e) => { e.preventDefault(); calc(); });
+    document.querySelectorAll("#tab-count .examples button").forEach((b) =>
+      b.addEventListener("click", () => { $("count-in").value = b.dataset.v; count(); }));
+  </script>
+</body>
+</html>

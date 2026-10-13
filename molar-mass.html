@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Molar Mass Calculator with Steps | ChemSteps</title>
+  <meta name="description" content="Free molar mass calculator that shows every step. Handles brackets and hydrates like Ca(OH)2 and CuSO4·5H2O, gives percent composition, and converts grams to moles.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Steps</span></a>
+      <nav>
+        <a href="molar-mass.html" aria-current="page">Molar mass</a>
+        <a href="dilution.html">Dilution</a>
+        <a href="sig-figs.html">Sig figs</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Molar mass calculator</h1>
+    <p class="lead">Type a chemical formula to get its molar mass, the mass of each element, and the percent composition, with every step shown.</p>
+
+    <div class="card">
+      <form id="mm-form" autocomplete="off">
+        <label for="formula">Chemical formula</label>
+        <div class="row">
+          <input type="text" id="formula" placeholder="e.g. Ca(OH)2" spellcheck="false" autocapitalize="off">
+          <button type="submit" style="flex: 0 0 auto">Calculate</button>
+        </div>
+        <p class="hint">Capital letters matter: <span class="math">Co</span> is cobalt, <span class="math">CO</span> is carbon monoxide. For hydrates use a dot or *, like <span class="math">CuSO4*5H2O</span>.</p>
+        <div class="examples" aria-label="Examples">
+          <button type="button" data-f="H2O">H₂O</button>
+          <button type="button" data-f="NaCl">NaCl</button>
+          <button type="button" data-f="C6H12O6">C₆H₁₂O₆</button>
+          <button type="button" data-f="Ca(OH)2">Ca(OH)₂</button>
+          <button type="button" data-f="(NH4)2SO4">(NH₄)₂SO₄</button>
+          <button type="button" data-f="CuSO4·5H2O">CuSO₄·5H₂O</button>
+        </div>
+      </form>
+      <div id="mm-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <div class="card" id="convert-card" style="margin-top: 16px" hidden>
+      <form id="convert-form" autocomplete="off">
+        <label for="amount">Convert grams ↔ moles for <span id="convert-formula"></span></label>
+        <div class="row">
+          <input type="text" id="amount" placeholder="e.g. 25.0" inputmode="decimal">
+          <select id="amount-unit" class="unit" aria-label="Unit">
+            <option value="g">g</option>
+            <option value="mol">mol</option>
+          </select>
+          <button type="submit" style="flex: 0 0 auto">Convert</button>
+        </div>
+      </form>
+      <div id="convert-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>How to calculate molar mass</h2>
+      <ol>
+        <li><strong>Count the atoms of each element.</strong> A subscript applies to the element right before it. A subscript after brackets multiplies everything inside: in Ca(OH)₂ there are 2 O and 2 H.</li>
+        <li><strong>Look up each element's atomic mass</strong> on the periodic table (in g/mol).</li>
+        <li><strong>Multiply</strong> each atomic mass by the number of atoms.</li>
+        <li><strong>Add</strong> the results. The total is the molar mass in g/mol.</li>
+      </ol>
+
+      <h3>Worked example: water, H₂O</h3>
+      <p>H: 2 × 1.008 = 2.016 g/mol<br>O: 1 × 15.999 = 15.999 g/mol<br>Molar mass = 2.016 + 15.999 = <strong>18.015 g/mol</strong> (often rounded to 18.02 g/mol).</p>
+
+      <h3>What about hydrates?</h3>
+      <p>Add the water molecules too. For CuSO₄·5H₂O, add the mass of CuSO₄ plus 5 × the mass of H₂O. That gives 249.68 g/mol.</p>
+
+      <h3>Converting grams to moles</h3>
+      <p>Use <span class="math">n = m ÷ M</span>: moles = mass in grams ÷ molar mass. To go from moles to grams, use <span class="math">m = n × M</span>.</p>
+
+      <p class="hint">Atomic masses are IUPAC standard values. Your textbook's periodic table may round slightly differently, which can change the last decimal place.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemSteps — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain } = Chem;
+    let current = null;
+
+    // H2O -> H<sub>2</sub>O, keeping hydrate coefficients (the 5 in ·5H2O) full size.
+    function pretty(f) {
+      return esc(f.replace(/\s+/g, "").replace(/[*.•]/g, "·"))
+        .replace(/([A-Za-z)\]}])(\d+)/g, "$1<sub>$2</sub>");
+    }
+
+    function calculate(formula) {
+      const out = $("mm-result");
+      try {
+        const { rows, total } = Chem.molarMass(formula);
+        current = { formula, total };
+        const body = rows.map((r) => `
+          <tr>
+            <td>${r.symbol} <span class="hint">(${r.name})</span></td>
+            <td class="num">${r.count}</td>
+            <td class="num">${r.mass}</td>
+            <td class="num">${plain(r.subtotal, 4)}</td>
+            <td class="num">${r.percent.toFixed(2)}%</td>
+          </tr>`).join("");
+        const sum = rows.map((r) => `${r.count} × ${r.mass}`).join(" + ");
+        out.innerHTML = `
+          <p class="answer">${total.toFixed(2)} g/mol <small>molar mass of ${pretty(formula)}</small></p>
+          <ol class="steps">
+            <li>Count the atoms of each element and look up each atomic mass.</li>
+            <li>Multiply each atomic mass by its count, then add:
+              <span class="math math-block">M = ${sum}<br>M = ${plain(total, 4)} g/mol ≈ ${total.toFixed(2)} g/mol</span>
+            </li>
+          </ol>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Element</th><th class="num">Atoms</th><th class="num">Atomic mass (g/mol)</th><th class="num">Subtotal (g/mol)</th><th class="num">Mass %</th></tr></thead>
+              <tbody>${body}</tbody>
+              <tfoot><tr><td>Total</td><td></td><td></td><td class="num">${plain(total, 4)}</td><td class="num">100%</td></tr></tfoot>
+            </table>
+          </div>`;
+        $("convert-formula").innerHTML = pretty(formula);
+        $("convert-card").hidden = false;
+        $("convert-result").innerHTML = "";
+        history.replaceState(null, "", "?f=" + encodeURIComponent(formula));
+      } catch (e) {
+        current = null;
+        $("convert-card").hidden = true;
+        out.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+      }
+    }
+
+    function convert() {
+      const out = $("convert-result");
+      const raw = $("amount").value;
+      const info = Chem.countSigFigs(raw);
+      if (!current) return;
+      if (!info) { out.innerHTML = `<p class="error">Enter a number, like 25.0 or 1.5e-3.</p>`; return; }
+      const v = info.parsed.value;
+      const M = current.total;
+      const sf = info.count;
+      const Mtxt = M.toFixed(2);
+      if ($("amount-unit").value === "g") {
+        const n = v / M;
+        out.innerHTML = `
+          <p class="answer">${Chem.formatSigFigs(n, sf)} mol</p>
+          <ol class="steps">
+            <li>Use <span class="math">n = m ÷ M</span>.</li>
+            <li><span class="math">n = ${esc(raw.trim())} g ÷ ${Mtxt} g/mol = ${plain(n)} mol</span></li>
+            <li>Round to ${sf} significant figure${sf === 1 ? "" : "s"} (same as the mass you entered): <strong>${Chem.formatSigFigs(n, sf)} mol</strong></li>
+          </ol>`;
+      } else {
+        const m = v * M;
+        out.innerHTML = `
+          <p class="answer">${Chem.formatSigFigs(m, sf)} g</p>
+          <ol class="steps">
+            <li>Use <span class="math">m = n × M</span>.</li>
+            <li><span class="math">m = ${esc(raw.trim())} mol × ${Mtxt} g/mol = ${plain(m)} g</span></li>
+            <li>Round to ${sf} significant figure${sf === 1 ? "" : "s"} (same as the moles you entered): <strong>${Chem.formatSigFigs(m, sf)} g</strong></li>
+          </ol>`;
+      }
+    }
+
+    $("mm-form").addEventListener("submit", (e) => { e.preventDefault(); calculate($("formula").value); });
+    $("convert-form").addEventListener("submit", (e) => { e.preventDefault(); convert(); });
+    document.querySelectorAll(".examples button").forEach((b) =>
+      b.addEventListener("click", () => { $("formula").value = b.dataset.f; calculate(b.dataset.f); }));
+
+    const start = new URLSearchParams(location.search).get("f");
+    if (start) { $("formula").value = start; calculate(start); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dilution Calculator (C1V1 = C2V2) with Steps | ChemSteps</title>
+  <meta name="description" content="Free dilution calculator for C1V1 = C2V2. Leave one value blank to solve for it. Shows every step, converts units (M, mM, µM, L, mL, µL) and tells you how much water to add.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Steps</span></a>
+      <nav>
+        <a href="molar-mass.html">Molar mass</a>
+        <a href="dilution.html" aria-current="page">Dilution</a>
+        <a href="sig-figs.html">Sig figs</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Dilution calculator (C₁V₁ = C₂V₂)</h1>
+    <p class="lead">Fill in three values and leave the one you want to find blank. You'll get the answer, every step, and how to actually make the solution in the lab.</p>
+
+    <div class="card">
+      <form id="dil-form" autocomplete="off">
+        <div class="row" style="margin-bottom: 14px">
+          <div>
+            <label for="c1">C₁ (stock concentration)</label>
+            <div class="row">
+              <input type="text" id="c1" inputmode="decimal" placeholder="e.g. 2.00">
+              <select id="c1u" class="unit" aria-label="C1 unit"></select>
+            </div>
+          </div>
+          <div>
+            <label for="v1">V₁ (volume of stock)</label>
+            <div class="row">
+              <input type="text" id="v1" inputmode="decimal" placeholder="leave blank to solve">
+              <select id="v1u" class="unit" aria-label="V1 unit"></select>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom: 14px">
+          <div>
+            <label for="c2">C₂ (final concentration)</label>
+            <div class="row">
+              <input type="text" id="c2" inputmode="decimal" placeholder="e.g. 0.500">
+              <select id="c2u" class="unit" aria-label="C2 unit"></select>
+            </div>
+          </div>
+          <div>
+            <label for="v2">V₂ (final total volume)</label>
+            <div class="row">
+              <input type="text" id="v2" inputmode="decimal" placeholder="e.g. 250.0">
+              <select id="v2u" class="unit" aria-label="V2 unit"></select>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="gap: 10px">
+          <button type="submit" style="flex: 0 0 auto">Calculate</button>
+          <button type="button" class="secondary" id="example" style="flex: 0 0 auto">Try an example</button>
+          <button type="button" class="secondary" id="clear" style="flex: 0 0 auto">Clear</button>
+        </div>
+      </form>
+      <div id="dil-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>How the dilution formula works</h2>
+      <p>When you dilute a solution, you add solvent but the amount of solute (moles) stays the same. Moles = concentration × volume, so:</p>
+      <p><span class="math">C₁V₁ = C₂V₂</span></p>
+      <ul>
+        <li><strong>C₁, V₁</strong>: concentration and volume of the stock solution you take</li>
+        <li><strong>C₂, V₂</strong>: concentration and <em>total</em> volume of the diluted solution</li>
+      </ul>
+      <p>Rearrange for the unknown, for example <span class="math">V₁ = C₂V₂ ÷ C₁</span>. Both concentrations must use the same unit, and both volumes must use the same unit.</p>
+
+      <h3>Worked example</h3>
+      <p>How much 2.00 M HCl do you need to make 250.0 mL of 0.500 M HCl?<br>
+      V₁ = (0.500 M × 250.0 mL) ÷ 2.00 M = 62.5 mL.<br>
+      Take 62.5 mL of the stock and add water until the total volume is 250.0 mL (about 187.5 mL of water).</p>
+
+      <h3>Common mistakes</h3>
+      <ul>
+        <li>Using the volume of water added as V₂. V₂ is the <em>final total</em> volume.</li>
+        <li>Mixing units, like M with mM or L with mL, without converting.</li>
+        <li>Getting C₂ bigger than C₁. Diluting can only lower the concentration.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemSteps — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain, formatSigFigs } = Chem;
+
+    const CONC = { "M": 1, "mM": 1e-3, "µM": 1e-6 };
+    const VOL = { "L": 1, "mL": 1e-3, "µL": 1e-6 };
+    const FIELDS = {
+      c1: { label: "C₁", units: CONC, def: "M" },
+      v1: { label: "V₁", units: VOL, def: "mL" },
+      c2: { label: "C₂", units: CONC, def: "M" },
+      v2: { label: "V₂", units: VOL, def: "mL" },
+    };
+
+    Object.entries(FIELDS).forEach(([id, f]) => {
+      $(id + "u").innerHTML = Object.keys(f.units).map((u) => `<option${u === f.def ? " selected" : ""}>${u}</option>`).join("");
+    });
+
+    function solve() {
+      const out = $("dil-result");
+      const ids = Object.keys(FIELDS);
+      const blank = ids.filter((id) => $(id).value.trim() === "");
+      if (blank.length !== 1) {
+        out.innerHTML = `<p class="error">Fill in exactly three values and leave one blank (the one you want to find).</p>`;
+        return;
+      }
+      const unknown = blank[0];
+      const known = {};
+      for (const id of ids.filter((x) => x !== unknown)) {
+        const info = Chem.countSigFigs($(id).value);
+        if (!info || info.parsed.value <= 0) {
+          out.innerHTML = `<p class="error">${FIELDS[id].label} must be a positive number.</p>`;
+          return;
+        }
+        known[id] = { raw: $(id).value.trim(), unit: $(id + "u").value, value: info.parsed.value, sf: info.count };
+      }
+
+      // Convert each known value into the unit chosen for the unknown's partner type.
+      const target = { conc: unknown.startsWith("c") ? $(unknown + "u").value : null, vol: unknown.startsWith("v") ? $(unknown + "u").value : null };
+      // Pick a common unit for each pair: the unknown's unit if it's in that pair, else the first known's unit.
+      const concUnit = target.conc || known.c1?.unit || known.c2.unit;
+      const volUnit = target.vol || known.v1?.unit || known.v2.unit;
+      const conversions = [];
+      for (const [id, k] of Object.entries(known)) {
+        const isConc = id.startsWith("c");
+        const table = isConc ? CONC : VOL;
+        const want = isConc ? concUnit : volUnit;
+        k.conv = k.value * table[k.unit] / table[want];
+        k.convUnit = want;
+        k.display = k.unit === want ? esc(k.raw) : plain(k.conv); // keep the user's digits (2.00, not 2) when no conversion
+        if (k.unit !== want) conversions.push(`${FIELDS[id].label} = ${esc(k.raw)} ${k.unit} = ${plain(k.conv)} ${want}`);
+      }
+
+      const sf = Math.min(...Object.values(known).map((k) => k.sf));
+      const show = (id) => `${known[id].display} ${known[id].convUnit}`;
+      let result, rearranged, substituted, unit;
+      if (unknown === "c1") { result = known.c2.conv * known.v2.conv / known.v1.conv; rearranged = "C₁ = C₂V₂ ÷ V₁"; substituted = `C₁ = (${show("c2")} × ${show("v2")}) ÷ ${show("v1")}`; unit = concUnit; }
+      if (unknown === "v1") { result = known.c2.conv * known.v2.conv / known.c1.conv; rearranged = "V₁ = C₂V₂ ÷ C₁"; substituted = `V₁ = (${show("c2")} × ${show("v2")}) ÷ ${show("c1")}`; unit = volUnit; }
+      if (unknown === "c2") { result = known.c1.conv * known.v1.conv / known.v2.conv; rearranged = "C₂ = C₁V₁ ÷ V₂"; substituted = `C₂ = (${show("c1")} × ${show("v1")}) ÷ ${show("v2")}`; unit = concUnit; }
+      if (unknown === "v2") { result = known.c1.conv * known.v1.conv / known.c2.conv; rearranged = "V₂ = C₁V₁ ÷ C₂"; substituted = `V₂ = (${show("c1")} × ${show("v1")}) ÷ ${show("c2")}`; unit = volUnit; }
+
+      const answer = formatSigFigs(result, sf);
+      const steps = [`Start with <span class="math">C₁V₁ = C₂V₂</span> and rearrange: <span class="math">${rearranged}</span>`];
+      if (conversions.length) steps.push(`Convert to matching units:<span class="math math-block">${conversions.join("<br>")}</span>`);
+      steps.push(`Substitute:<span class="math math-block">${substituted}<br>${FIELDS[unknown].label} = ${plain(result)} ${unit}</span>`);
+      steps.push(`Round to ${sf} significant figure${sf === 1 ? "" : "s"} (the fewest in the values you entered): <strong>${FIELDS[unknown].label} = ${answer} ${unit}</strong>`);
+
+      // Practical lab instructions and sanity checks, using values in a common volume unit.
+      const c1 = unknown === "c1" ? result : known.c1.conv;
+      const c2 = unknown === "c2" ? result : known.c2.conv;
+      const v1 = unknown === "v1" ? result : known.v1.conv;
+      const v2 = unknown === "v2" ? result : known.v2.conv;
+      const txt = (id) => unknown === id ? answer : known[id].display;
+      let note = "";
+      if (c2 > c1 * (1 + 1e-9) || v1 > v2 * (1 + 1e-9)) {
+        note = `<p class="error">Check your numbers: in a dilution the final concentration must be lower than the stock, and the final volume must be bigger than the stock volume.</p>`;
+      } else {
+        const water = v2 - v1;
+        note = `<p><strong>In the lab:</strong> measure ${txt("v1")} ${volUnit} of the ${txt("c1")} ${concUnit} stock, then add solvent until the total volume is ${txt("v2")} ${volUnit} (about ${plain(water, 4)} ${volUnit} of solvent).</p>`;
+      }
+
+      out.innerHTML = `
+        <p class="answer">${FIELDS[unknown].label} = ${answer} ${unit}</p>
+        <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>
+        ${note}`;
+    }
+
+    $("dil-form").addEventListener("submit", (e) => { e.preventDefault(); solve(); });
+    $("example").addEventListener("click", () => {
+      $("c1").value = "2.00"; $("c1u").value = "M";
+      $("v1").value = ""; $("v1u").value = "mL";
+      $("c2").value = "0.500"; $("c2u").value = "M";
+      $("v2").value = "250.0"; $("v2u").value = "mL";
+      solve();
+    });
+    $("clear").addEventListener("click", () => {
+      ["c1", "v1", "c2", "v2"].forEach((id) => { $(id).value = ""; });
+      $("dil-result").innerHTML = "";
+    });
+  </script>
+</body>
+</html>
