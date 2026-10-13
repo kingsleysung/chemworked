@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ideal Gas Law Calculator (PV = nRT) with Steps | ChemWorked</title>
+  <meta name="description" content="Free ideal gas law calculator. Leave P, V, n or T blank to solve for it. Converts kPa, atm, mmHg, mL and °C automatically and shows every step.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Worked</span></a>
+      <nav><a href="./#tools">All calculators</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Ideal gas law calculator (PV = nRT)</h1>
+    <p class="lead">Fill in three values and leave the one you want blank. Units are converted for you, and every step is shown.</p>
+
+    <div class="card">
+      <form id="gas-form" autocomplete="off">
+        <div class="row" style="margin-bottom: 14px">
+          <div>
+            <label for="p">P (pressure)</label>
+            <div class="row">
+              <input type="text" id="p" inputmode="decimal" placeholder="e.g. 101.3">
+              <select id="pu" class="unit" aria-label="Pressure unit"><option>kPa</option><option>atm</option><option>mmHg</option><option>Pa</option></select>
+            </div>
+          </div>
+          <div>
+            <label for="v">V (volume)</label>
+            <div class="row">
+              <input type="text" id="v" inputmode="decimal" placeholder="e.g. 22.4">
+              <select id="vu" class="unit" aria-label="Volume unit"><option>L</option><option>mL</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom: 14px">
+          <div>
+            <label for="n">n (amount)</label>
+            <div class="row">
+              <input type="text" id="n" inputmode="decimal" placeholder="e.g. 1.00">
+              <select id="nu" class="unit" aria-label="Amount unit"><option>mol</option></select>
+            </div>
+          </div>
+          <div>
+            <label for="t">T (temperature)</label>
+            <div class="row">
+              <input type="text" id="t" inputmode="decimal" placeholder="e.g. 25.0">
+              <select id="tu" class="unit" aria-label="Temperature unit"><option>°C</option><option>K</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="gap: 10px">
+          <button type="submit" style="flex: 0 0 auto">Calculate</button>
+          <button type="button" class="secondary" id="example" style="flex: 0 0 auto">Try an example</button>
+          <button type="button" class="secondary" id="clear" style="flex: 0 0 auto">Clear</button>
+        </div>
+      </form>
+      <div id="gas-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>The ideal gas law</h2>
+      <p><span class="math">PV = nRT</span></p>
+      <ul>
+        <li><strong>P</strong>: pressure &nbsp; <strong>V</strong>: volume &nbsp; <strong>n</strong>: moles &nbsp; <strong>T</strong>: temperature in <strong>kelvin</strong></li>
+        <li><strong>R</strong> = 8.314 L·kPa/(mol·K) = 0.08206 L·atm/(mol·K). Pick the R that matches your pressure unit.</li>
+      </ul>
+
+      <h3>Unit conversions</h3>
+      <ul>
+        <li>K = °C + 273.15</li>
+        <li>1 atm = 101.325 kPa = 760 mmHg</li>
+        <li>1 L = 1000 mL</li>
+      </ul>
+
+      <h3>Worked example</h3>
+      <p>What volume does 2.00 mol of gas take up at 25.0 °C and 101.3 kPa?<br>
+      T = 25.0 + 273.15 = 298.15 K<br>
+      V = nRT ÷ P = (2.00 × 8.314 × 298.15) ÷ 101.3 = <strong>48.9 L</strong></p>
+
+      <h3>Most common mistake</h3>
+      <p>Using °C instead of kelvin. Gas laws only work with absolute temperature, so always convert first.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemWorked — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain, formatSigFigs } = Chem;
+    const R = 8.314; // L·kPa/(mol·K)
+    const P_TO_KPA = { kPa: 1, atm: 101.325, mmHg: 101.325 / 760, Pa: 0.001 };
+    const V_TO_L = { L: 1, mL: 0.001 };
+    const NAMES = { p: "P", v: "V", n: "n", t: "T" };
+
+    function toBase(id, value) {
+      const u = $(id + "u").value;
+      if (id === "p") return value * P_TO_KPA[u];
+      if (id === "v") return value * V_TO_L[u];
+      if (id === "t") return u === "°C" ? value + 273.15 : value;
+      return value;
+    }
+    function fromBase(id, value) {
+      const u = $(id + "u").value;
+      if (id === "p") return value / P_TO_KPA[u];
+      if (id === "v") return value / V_TO_L[u];
+      if (id === "t") return u === "°C" ? value - 273.15 : value;
+      return value;
+    }
+    const BASE_UNIT = { p: "kPa", v: "L", n: "mol", t: "K" };
+
+    function solve() {
+      const out = $("gas-result");
+      const ids = ["p", "v", "n", "t"];
+      const blank = ids.filter((id) => $(id).value.trim() === "");
+      if (blank.length !== 1) { out.innerHTML = `<p class="error">Fill in exactly three values and leave one blank.</p>`; return; }
+      const unknown = blank[0];
+      const k = {};
+      const conv = [];
+      for (const id of ids.filter((x) => x !== unknown)) {
+        const info = Chem.countSigFigs($(id).value);
+        if (!info) { out.innerHTML = `<p class="error">${NAMES[id]} must be a number.</p>`; return; }
+        const raw = $(id).value.trim();
+        const base = toBase(id, info.parsed.value);
+        if (!(base > 0)) { out.innerHTML = `<p class="error">${NAMES[id]} must be above zero${id === "t" ? " kelvin" : ""}.</p>`; return; }
+        k[id] = { raw, base, sf: info.count };
+        const u = $(id + "u").value;
+        if (u !== BASE_UNIT[id]) {
+          const how = id === "t" ? `${esc(raw)} + 273.15` : `${esc(raw)} ${u}`;
+          conv.push(`${NAMES[id]} = ${how} = ${plain(base)} ${BASE_UNIT[id]}`);
+        }
+      }
+      const sf = Math.min(...Object.values(k).map((x) => x.sf));
+      const b = (id) => plain(k[id].base);
+      let result, rearranged, sub;
+      if (unknown === "p") { result = k.n.base * R * k.t.base / k.v.base; rearranged = "P = nRT ÷ V"; sub = `P = (${b("n")} × 8.314 × ${b("t")}) ÷ ${b("v")}`; }
+      if (unknown === "v") { result = k.n.base * R * k.t.base / k.p.base; rearranged = "V = nRT ÷ P"; sub = `V = (${b("n")} × 8.314 × ${b("t")}) ÷ ${b("p")}`; }
+      if (unknown === "n") { result = k.p.base * k.v.base / (R * k.t.base); rearranged = "n = PV ÷ RT"; sub = `n = (${b("p")} × ${b("v")}) ÷ (8.314 × ${b("t")})`; }
+      if (unknown === "t") { result = k.p.base * k.v.base / (k.n.base * R); rearranged = "T = PV ÷ nR"; sub = `T = (${b("p")} × ${b("v")}) ÷ (${b("n")} × 8.314)`; }
+
+      const steps = [`Rearrange <span class="math">PV = nRT</span>: <span class="math">${rearranged}</span>`];
+      if (conv.length) steps.push(`Convert to kPa, L and K (to match R = 8.314 L·kPa/(mol·K)):<span class="math math-block">${conv.join("<br>")}</span>`);
+      steps.push(`Substitute:<span class="math math-block">${sub}<br>${NAMES[unknown]} = ${plain(result)} ${BASE_UNIT[unknown]}</span>`);
+      const wanted = $(unknown + "u").value;
+      let final = result;
+      if (wanted !== BASE_UNIT[unknown]) {
+        final = fromBase(unknown, result);
+        const how = unknown === "t" ? `${plain(result)} K − 273.15` : `${plain(result)} ${BASE_UNIT[unknown]}`;
+        steps.push(`Convert to ${wanted}: <span class="math">${how} = ${plain(final)} ${wanted}</span>`);
+      }
+      // °C keeps the same decimal place as the rounded kelvin value (subtracting 273.15 doesn't change precision).
+      const answer = unknown === "t" && wanted === "°C"
+        ? Chem.roundToPlace(final, sf - 1 - Math.floor(Math.log10(result)))
+        : formatSigFigs(final, sf);
+      steps.push(`Round to ${sf} significant figure${sf === 1 ? "" : "s"}: <strong>${NAMES[unknown]} = ${answer} ${wanted}</strong>`);
+      out.innerHTML = `
+        <p class="answer">${NAMES[unknown]} = ${answer} ${wanted}</p>
+        <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+    }
+
+    $("gas-form").addEventListener("submit", (e) => { e.preventDefault(); solve(); });
+    $("example").addEventListener("click", () => {
+      $("p").value = "101.3"; $("pu").value = "kPa";
+      $("v").value = ""; $("vu").value = "L";
+      $("n").value = "2.00";
+      $("t").value = "25.0"; $("tu").value = "°C";
+      solve();
+    });
+    $("clear").addEventListener("click", () => {
+      ["p", "v", "n", "t"].forEach((id) => { $(id).value = ""; });
+      $("gas-result").innerHTML = "";
+    });
+  </script>
+</body>
+</html>

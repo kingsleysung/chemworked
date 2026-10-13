@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Empirical Formula Calculator (and Molecular Formula) with Steps | ChemWorked</title>
+  <meta name="description" content="Free empirical formula calculator. Enter percent composition or grams of each element to get the empirical formula, and add a molar mass to get the molecular formula. Every step shown.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Worked</span></a>
+      <nav><a href="./#tools">All calculators</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Empirical formula calculator</h1>
+    <p class="lead">Enter the percent (or grams) of each element to get the empirical formula. Add the molar mass to also get the molecular formula.</p>
+
+    <div class="card">
+      <form id="emp-form" autocomplete="off">
+        <div class="row" style="margin-bottom: 8px">
+          <div style="flex: 0 0 auto">
+            <label for="amount-type">Amounts are in</label>
+            <select id="amount-type"><option value="%">Percent (%)</option><option value="g">Grams (g)</option></select>
+          </div>
+        </div>
+        <div id="rows"></div>
+        <div class="row" style="gap: 10px; margin: 6px 0 14px">
+          <button type="button" class="secondary" id="add-row" style="flex: 0 0 auto">+ Add element</button>
+        </div>
+        <label for="molar">Molar mass of the compound (optional, for the molecular formula)</label>
+        <div class="row">
+          <input type="text" id="molar" inputmode="decimal" placeholder="e.g. 180.16">
+          <span style="flex: 0 0 auto; align-self: center">g/mol</span>
+        </div>
+        <div class="row" style="gap: 10px; margin-top: 14px">
+          <button type="submit" style="flex: 0 0 auto">Calculate</button>
+          <button type="button" class="secondary" id="example" style="flex: 0 0 auto">Try an example</button>
+        </div>
+      </form>
+      <div id="emp-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>How to find an empirical formula</h2>
+      <p>The empirical formula is the simplest whole-number ratio of atoms in a compound.</p>
+      <ol>
+        <li><strong>Percent to grams:</strong> assume a 100 g sample, so 40.0% C becomes 40.0 g C.</li>
+        <li><strong>Grams to moles:</strong> divide each mass by the element's atomic mass.</li>
+        <li><strong>Divide by the smallest</strong> number of moles to get a ratio.</li>
+        <li><strong>Make whole numbers:</strong> if a ratio ends in about .5, multiply all by 2. About .33 or .67, multiply by 3. About .25 or .75, multiply by 4.</li>
+      </ol>
+      <p class="hint">A handy rhyme: "percent to mass, mass to mole, divide by small, multiply 'til whole."</p>
+
+      <h3>Molecular formula</h3>
+      <p>The molecular formula is a whole-number multiple of the empirical formula. Divide the compound's molar mass by the empirical formula mass, then multiply every subscript by that number. Example: CH₂O (30.03 g/mol) with molar mass 180.16 g/mol gives 180.16 ÷ 30.03 = 6, so C₆H₁₂O₆ (glucose).</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemWorked — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain } = Chem;
+    const pretty = (f) => esc(f).replace(/([A-Za-z)\]}])(\d+)/g, "$1<sub>$2</sub>");
+
+    function addRow(sym = "", amt = "") {
+      const div = document.createElement("div");
+      div.className = "row el-row";
+      div.style.marginBottom = "8px";
+      div.innerHTML = `
+        <input type="text" class="el-sym" placeholder="Element (e.g. C)" aria-label="Element symbol" value="${esc(sym)}" spellcheck="false" autocapitalize="off" style="flex: 1 1 120px">
+        <input type="text" class="el-amt" placeholder="Amount" aria-label="Amount" inputmode="decimal" value="${esc(amt)}" style="flex: 1 1 120px">
+        <button type="button" class="secondary remove" aria-label="Remove element" style="flex: 0 0 auto">✕</button>`;
+      div.querySelector(".remove").addEventListener("click", () => div.remove());
+      $("rows").appendChild(div);
+    }
+
+    function calculate() {
+      const out = $("emp-result");
+      try {
+        const unit = $("amount-type").value;
+        const items = [...document.querySelectorAll(".el-row")]
+          .map((r) => ({ symbol: r.querySelector(".el-sym").value.trim(), raw: r.querySelector(".el-amt").value.trim() }))
+          .filter((r) => r.symbol || r.raw)
+          .map((r) => {
+            const info = Chem.countSigFigs(r.raw);
+            if (!r.symbol) throw new Error("One row has an amount but no element symbol.");
+            return { symbol: r.symbol, mass: info ? info.parsed.value : NaN };
+          });
+        const res = Chem.empiricalFormula(items);
+        const steps = [];
+        if (unit === "%") {
+          const total = items.reduce((t, i) => t + i.mass, 0);
+          steps.push(`Assume a 100 g sample, so each percent becomes grams.${Math.abs(total - 100) > 1 ? ` <em>(Your percents add up to ${plain(total, 2)}%, not 100%. Check for a missing element.)</em>` : ""}`);
+        }
+        const body = res.rows.map((r) => `
+          <tr>
+            <td>${r.symbol}</td>
+            <td class="num">${plain(r.mass, 4)} g</td>
+            <td class="num">${plain(r.mass, 4)} ÷ ${r.atomicMass} = ${plain(r.moles, 4)}</td>
+            <td class="num">${plain(r.ratio, 3)}</td>
+            <td class="num">${r.subscript}</td>
+          </tr>`).join("");
+        steps.push(`Convert grams to moles, then divide every value by the smallest (${plain(res.smallest, 4)} mol).`);
+        steps.push(res.multiplier > 1
+          ? `The ratios aren't all whole numbers, so multiply every ratio by <strong>${res.multiplier}</strong>.`
+          : `The ratios are already close to whole numbers, so round them.`);
+
+        let molecular = "";
+        const molarRaw = $("molar").value.trim();
+        if (molarRaw) {
+          const mInfo = Chem.countSigFigs(molarRaw);
+          if (!mInfo || !(mInfo.parsed.value > 0)) throw new Error("The molar mass must be a positive number.");
+          const ratio = mInfo.parsed.value / res.empiricalMass;
+          const k = Math.round(ratio);
+          if (k < 1 || Math.abs(ratio - k) > 0.1) {
+            molecular = `<p class="error">The molar mass ÷ empirical formula mass = ${plain(ratio, 3)}, which isn't close to a whole number. Check the molar mass.</p>`;
+          } else {
+            const mf = res.rows.map((r) => r.symbol + (r.subscript * k > 1 ? r.subscript * k : "")).join("");
+            steps.push(`Molecular formula: <span class="math">${esc(molarRaw)} ÷ ${plain(res.empiricalMass, 2)} = ${plain(ratio, 3)} ≈ ${k}</span>, so multiply every subscript by ${k}: <strong>${pretty(mf)}</strong>`);
+            molecular = `<p class="answer" style="font-size: 1.25rem">Molecular formula: ${pretty(mf)}</p>`;
+          }
+        }
+
+        out.innerHTML = `
+          <p class="answer">Empirical formula: ${pretty(res.formula)} <small>(${plain(res.empiricalMass, 2)} g/mol)</small></p>
+          ${molecular}
+          <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>
+          <div class="table-scroll"><table>
+            <thead><tr><th>Element</th><th class="num">Mass</th><th class="num">Moles (mass ÷ atomic mass)</th><th class="num">÷ smallest</th><th class="num">Whole number${res.multiplier > 1 ? ` (×${res.multiplier})` : ""}</th></tr></thead>
+            <tbody>${body}</tbody>
+          </table></div>`;
+      } catch (e) {
+        out.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+      }
+    }
+
+    addRow(); addRow(); addRow();
+    $("add-row").addEventListener("click", () => addRow());
+    $("emp-form").addEventListener("submit", (e) => { e.preventDefault(); calculate(); });
+    $("example").addEventListener("click", () => {
+      $("rows").innerHTML = "";
+      addRow("C", "40.0"); addRow("H", "6.7"); addRow("O", "53.3");
+      $("amount-type").value = "%";
+      $("molar").value = "180.16";
+      calculate();
+    });
+  </script>
+</body>
+</html>

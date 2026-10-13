@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chemical Equation Balancer with Steps | ChemWorked</title>
+  <meta name="description" content="Free chemical equation balancer. Type an equation like Fe + O2 -> Fe2O3 and get the balanced equation plus an atom count check for every element.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Worked</span></a>
+      <nav><a href="./#tools">All calculators</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Chemical equation balancer</h1>
+    <p class="lead">Type an unbalanced equation to get the coefficients, plus an atom count check showing that both sides match.</p>
+
+    <div class="card">
+      <form id="bal-form" autocomplete="off">
+        <label for="equation">Equation</label>
+        <div class="row">
+          <input type="text" id="equation" placeholder="e.g. Fe + O2 -> Fe2O3" spellcheck="false" autocapitalize="off">
+          <button type="submit" style="flex: 0 0 auto">Balance</button>
+        </div>
+        <p class="hint">Use <span class="math">-&gt;</span> or <span class="math">=</span> for the arrow and <span class="math">+</span> between compounds. Capital letters matter.</p>
+        <div class="examples">
+          <button type="button" data-e="H2 + O2 -> H2O">H₂ + O₂ → H₂O</button>
+          <button type="button" data-e="Fe + O2 -> Fe2O3">Fe + O₂ → Fe₂O₃</button>
+          <button type="button" data-e="C3H8 + O2 -> CO2 + H2O">C₃H₈ combustion</button>
+          <button type="button" data-e="Ca(OH)2 + H3PO4 -> Ca3(PO4)2 + H2O">Ca(OH)₂ + H₃PO₄</button>
+          <button type="button" data-e="Cu + HNO3 -> Cu(NO3)2 + NO + H2O">Cu + HNO₃</button>
+        </div>
+      </form>
+      <div id="bal-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>How to balance a chemical equation</h2>
+      <p>Atoms can't be created or destroyed, so every element needs the same number of atoms on both sides. You balance by changing <strong>coefficients</strong> (the big numbers in front), never the subscripts.</p>
+      <ol>
+        <li>Write the correct formula for every reactant and product.</li>
+        <li>Count the atoms of each element on both sides.</li>
+        <li>Balance elements that appear in only one compound per side first. Leave H and O (and pure elements like O₂) for last.</li>
+        <li>Adjust coefficients until every element matches, then reduce to the smallest whole numbers.</li>
+      </ol>
+
+      <h3>Worked example: rusting iron</h3>
+      <p>Fe + O₂ → Fe₂O₃. Oxygen is 2 on the left and 3 on the right, so the lowest common multiple is 6: use 3 O₂ and 2 Fe₂O₃. That makes 4 Fe on the right, so use 4 Fe on the left.<br>
+      <strong>4 Fe + 3 O₂ → 2 Fe₂O₃</strong></p>
+
+      <h3>Tip for combustion reactions</h3>
+      <p>For C<sub>x</sub>H<sub>y</sub> + O₂ → CO₂ + H₂O: balance C first (CO₂), then H (H₂O), then O last. If you get a fraction like 13/2 O₂, multiply everything by 2.</p>
+
+      <p class="hint">This tool balances by atoms only. It doesn't check whether the reaction actually happens or balance ionic charges.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemWorked — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc } = Chem;
+
+    const pretty = (f) => esc(f).replace(/([A-Za-z)\]}])(\d+)/g, "$1<sub>$2</sub>");
+    const term = (s) => `${s.coef > 1 ? s.coef + " " : ""}${pretty(s.formula)}`;
+    const sideText = (list) => list.map(term).join(" + ");
+    const countText = (list, el) => list.filter((s) => s.counts[el])
+      .map((s) => `${s.coef} × ${s.counts[el]}`).join(" + ");
+
+    function balance(text) {
+      const out = $("bal-result");
+      try {
+        const r = Chem.balanceEquation(text);
+        const rows = r.tally.map((t) => `
+          <tr>
+            <td>${t.element}</td>
+            <td>${countText(r.reactants, t.element)} = <strong>${t.left}</strong></td>
+            <td>${countText(r.products, t.element)} = <strong>${t.right}</strong></td>
+            <td>${t.left === t.right ? "✓" : "✗"}</td>
+          </tr>`).join("");
+        out.innerHTML = `
+          <p class="answer" style="font-size: 1.35rem">${sideText(r.reactants)} → ${sideText(r.products)}</p>
+          <p class="hint">Coefficients: ${[...r.reactants, ...r.products].map((s) => s.coef).join(" : ")} (a coefficient of 1 isn't written)</p>
+          <h3>Check: atoms on each side</h3>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Element</th><th>Reactants</th><th>Products</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+        history.replaceState(null, "", "?eq=" + encodeURIComponent(text));
+      } catch (e) {
+        out.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+      }
+    }
+
+    $("bal-form").addEventListener("submit", (e) => { e.preventDefault(); balance($("equation").value); });
+    document.querySelectorAll(".examples button").forEach((b) =>
+      b.addEventListener("click", () => { $("equation").value = b.dataset.e; balance(b.dataset.e); }));
+    const start = new URLSearchParams(location.search).get("eq");
+    if (start) { $("equation").value = start; balance(start); }
+  </script>
+</body>
+</html>

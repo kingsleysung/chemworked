@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ChemWorked: Free Chemistry Calculators with Step-by-Step Solutions</title>
-  <meta name="description" content="Free chemistry calculators that show every step: molar mass, dilution (C1V1 = C2V2) and significant figures. Built for high school and university students.">
+  <meta name="description" content="Free chemistry calculators that show every step: molar mass, equation balancing, molarity, dilution, pH, ideal gas law, empirical formula and significant figures. Built for high school and first-year students.">
   <meta name="google-site-verification" content="u99ZDO9dTZ7xaVcRGISAnZYa91USbBWeS8orDD9a65I" />
   <link rel="stylesheet" href="style.css">
 </head>
@@ -12,37 +12,79 @@
   <header class="site-header">
     <div class="wrap">
       <a class="logo" href="./">Chem<span>Worked</span></a>
-      <nav>
-        <a href="molar-mass.html">Molar mass</a>
-        <a href="dilution.html">Dilution</a>
-        <a href="sig-figs.html">Sig figs</a>
-      </nav>
+      <nav><a href="./#tools">All calculators</a></nav>
     </div>
   </header>
 
   <main class="wrap">
     <h1>Chemistry calculators that show every step</h1>
-    <p class="lead">Get the answer and see how to get there, with units and significant figures done right. Free, no sign-up.</p>
+    <p class="lead">Get the answer and see how to get there, with units and significant figures done right. Free, no sign-up. Made for high school and first-year university chemistry.</p>
 
+    <div id="tools">
+    <h2>Moles &amp; formulas</h2>
     <div class="tool-grid">
       <a href="molar-mass.html">
         <div class="card">
-          <h2>Molar mass calculator</h2>
-          <p>Type any formula, like Ca(OH)₂ or CuSO₄·5H₂O. See the mass of each element, percent composition and grams ↔ moles.</p>
+          <h3>Molar mass</h3>
+          <p>Any formula, like Ca(OH)₂ or CuSO₄·5H₂O. Mass of each element, percent composition, grams ↔ moles.</p>
+        </div>
+      </a>
+      <a href="empirical-formula.html">
+        <div class="card">
+          <h3>Empirical formula</h3>
+          <p>From percent composition or grams to the empirical formula, plus the molecular formula.</p>
+        </div>
+      </a>
+      <a href="balance.html">
+        <div class="card">
+          <h3>Equation balancer</h3>
+          <p>Fe + O₂ → Fe₂O₃ becomes 4 Fe + 3 O₂ → 2 Fe₂O₃, with an atom count check.</p>
+        </div>
+      </a>
+    </div>
+
+    <h2>Solutions</h2>
+    <div class="tool-grid">
+      <a href="molarity.html">
+        <div class="card">
+          <h3>Molarity</h3>
+          <p>Grams needed to make a solution, or the molarity of one you made.</p>
         </div>
       </a>
       <a href="dilution.html">
         <div class="card">
-          <h2>Dilution calculator</h2>
-          <p>Solve C₁V₁ = C₂V₂ for any missing value, with unit conversions and how much water to add.</p>
+          <h3>Dilution (C₁V₁ = C₂V₂)</h3>
+          <p>Solve for any missing value, with unit conversions and how much water to add.</p>
         </div>
       </a>
+    </div>
+
+    <h2>Acids, bases &amp; gases</h2>
+    <div class="tool-grid">
+      <a href="ph.html">
+        <div class="card">
+          <h3>pH</h3>
+          <p>pH, pOH, [H⁺] and [OH⁻]. Strong acids and bases, and weak ones from Ka or Kb.</p>
+        </div>
+      </a>
+      <a href="ideal-gas.html">
+        <div class="card">
+          <h3>Ideal gas law (PV = nRT)</h3>
+          <p>Solve for P, V, n or T with kPa, atm, mmHg and °C conversions.</p>
+        </div>
+      </a>
+    </div>
+
+    <h2>Math skills</h2>
+    <div class="tool-grid">
       <a href="sig-figs.html">
         <div class="card">
-          <h2>Significant figures calculator</h2>
-          <p>Count sig figs, round to any number of sig figs, and do +, −, ×, ÷ with the correct sig fig rules.</p>
+          <h3>Significant figures</h3>
+          <p>Count, round, and do +, −, ×, ÷ with the correct sig fig rules.</p>
         </div>
       </a>
+    </div>
+
     </div>
 
     <section class="explain">

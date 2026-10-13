@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Molarity Calculator: Grams Needed &amp; Concentration, with Steps | ChemWorked</title>
+  <meta name="description" content="Free molarity calculator. Find how many grams you need to make a solution, or find the molarity from mass and volume. Shows the molar mass, moles and every step.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Worked</span></a>
+      <nav><a href="./#tools">All calculators</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Molarity calculator</h1>
+    <p class="lead">Find how many grams to weigh out for a solution, or find the concentration of a solution you made. Every step is shown.</p>
+
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-tab="mass">Grams needed</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="conc">Find molarity</button>
+      </div>
+
+      <form id="mol-form" autocomplete="off">
+        <label for="formula">Solute formula</label>
+        <input type="text" id="formula" placeholder="e.g. NaCl" spellcheck="false" autocapitalize="off">
+
+        <div class="row" style="margin-top: 14px">
+          <div id="conc-wrap">
+            <label for="conc">Concentration you want</label>
+            <div class="row">
+              <input type="text" id="conc" inputmode="decimal" placeholder="e.g. 0.250">
+              <select id="concu" class="unit" aria-label="Concentration unit"><option>M</option><option>mM</option></select>
+            </div>
+          </div>
+          <div id="mass-wrap" hidden>
+            <label for="mass">Mass of solute</label>
+            <div class="row">
+              <input type="text" id="mass" inputmode="decimal" placeholder="e.g. 5.85">
+              <select id="massu" class="unit" aria-label="Mass unit"><option>g</option><option>mg</option></select>
+            </div>
+          </div>
+          <div>
+            <label for="vol">Final volume of solution</label>
+            <div class="row">
+              <input type="text" id="vol" inputmode="decimal" placeholder="e.g. 500.0">
+              <select id="volu" class="unit" aria-label="Volume unit"><option>mL</option><option>L</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="row" style="gap: 10px; margin-top: 14px">
+          <button type="submit" style="flex: 0 0 auto">Calculate</button>
+          <button type="button" class="secondary" id="example" style="flex: 0 0 auto">Try an example</button>
+        </div>
+      </form>
+      <div id="mol-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>The molarity formula</h2>
+      <p>Molarity (M) is moles of solute per litre of solution:</p>
+      <p><span class="math">M = n ÷ V</span> &nbsp; and &nbsp; <span class="math">n = m ÷ (molar mass)</span></p>
+      <p>Put them together to go straight between grams and molarity: <span class="math">m = M × V × (molar mass)</span></p>
+
+      <h3>Worked example</h3>
+      <p>How many grams of NaCl do you need for 500.0 mL of 0.250 M solution?</p>
+      <ol>
+        <li>Convert volume to litres: 500.0 mL = 0.5000 L</li>
+        <li>Moles needed: n = 0.250 mol/L × 0.5000 L = 0.125 mol</li>
+        <li>Molar mass of NaCl = 22.990 + 35.45 = 58.44 g/mol</li>
+        <li>Mass: 0.125 mol × 58.44 g/mol = <strong>7.31 g</strong></li>
+      </ol>
+
+      <h3>Making it in the lab</h3>
+      <p>Weigh the solid, dissolve it in less water than you need, transfer to a volumetric flask, then add water up to the line. The volume in the formula is the <em>final solution</em> volume, not the volume of water you add.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemWorked — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain, formatSigFigs } = Chem;
+    let mode = "mass";
+    const VOL = { L: 1, mL: 1e-3 };
+    const CONC = { M: 1, mM: 1e-3 };
+    const MASS = { g: 1, mg: 1e-3 };
+    const pretty = (f) => esc(f.replace(/\s+/g, "")).replace(/([A-Za-z)\]}])(\d+)/g, "$1<sub>$2</sub>");
+
+    function readNum(id, label) {
+      const info = Chem.countSigFigs($(id).value);
+      if (!info || !(info.parsed.value > 0)) throw new Error(`Enter a positive number for ${label}.`);
+      return { raw: $(id).value.trim(), value: info.parsed.value, sf: info.count };
+    }
+
+    function calculate() {
+      const out = $("mol-result");
+      try {
+        const formula = $("formula").value;
+        const { total: M } = Chem.molarMass(formula);
+        const vol = readNum("vol", "the volume");
+        const vu = $("volu").value;
+        const VL = vol.value * VOL[vu];
+        const steps = [];
+        steps.push(`Molar mass of ${pretty(formula)}: <span class="math">${M.toFixed(2)} g/mol</span> (<a href="molar-mass.html?f=${encodeURIComponent(formula)}">see how</a>)`);
+        if (vu !== "L") steps.push(`Convert volume to litres: <span class="math">${esc(vol.raw)} mL ÷ 1000 = ${plain(VL)} L</span>`);
+
+        if (mode === "mass") {
+          const c = readNum("conc", "the concentration");
+          const cu = $("concu").value;
+          const cM = c.value * CONC[cu];
+          if (cu !== "M") steps.push(`Convert concentration: <span class="math">${esc(c.raw)} mM ÷ 1000 = ${plain(cM)} M</span>`);
+          const n = cM * VL;
+          const m = n * M;
+          const sf = Math.min(c.sf, vol.sf);
+          steps.push(`Moles of solute: <span class="math">n = M × V = ${plain(cM)} mol/L × ${plain(VL)} L = ${plain(n)} mol</span>`);
+          steps.push(`Mass: <span class="math">m = n × molar mass = ${plain(n)} mol × ${M.toFixed(2)} g/mol = ${plain(m)} g</span>`);
+          steps.push(`Round to ${sf} significant figure${sf === 1 ? "" : "s"}: <strong>${formatSigFigs(m, sf)} g</strong>`);
+          out.innerHTML = `
+            <p class="answer">${formatSigFigs(m, sf)} g <small>of ${pretty(formula)}</small></p>
+            <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>
+            <p><strong>In the lab:</strong> weigh ${formatSigFigs(m, sf)} g of ${pretty(formula)}, dissolve it, and add water until the total volume is ${esc(vol.raw)} ${vu}.</p>`;
+        } else {
+          const mass = readNum("mass", "the mass");
+          const mu = $("massu").value;
+          const g = mass.value * MASS[mu];
+          if (mu !== "g") steps.push(`Convert mass to grams: <span class="math">${esc(mass.raw)} mg ÷ 1000 = ${plain(g)} g</span>`);
+          const n = g / M;
+          const c = n / VL;
+          const sf = Math.min(mass.sf, vol.sf);
+          steps.push(`Moles of solute: <span class="math">n = m ÷ molar mass = ${plain(g)} g ÷ ${M.toFixed(2)} g/mol = ${plain(n)} mol</span>`);
+          steps.push(`Molarity: <span class="math">M = n ÷ V = ${plain(n)} mol ÷ ${plain(VL)} L = ${plain(c)} M</span>`);
+          steps.push(`Round to ${sf} significant figure${sf === 1 ? "" : "s"}: <strong>${formatSigFigs(c, sf)} M</strong>`);
+          out.innerHTML = `
+            <p class="answer">${formatSigFigs(c, sf)} M <small>${pretty(formula)} solution</small></p>
+            <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+        }
+      } catch (e) {
+        out.innerHTML = `<p class="error">${esc(e.message)}</p>`;
+      }
+    }
+
+    document.querySelectorAll(".tabs button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        mode = btn.dataset.tab;
+        document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b === btn));
+        $("conc-wrap").hidden = mode !== "mass";
+        $("mass-wrap").hidden = mode !== "conc";
+        $("mol-result").innerHTML = "";
+      });
+    });
+    $("mol-form").addEventListener("submit", (e) => { e.preventDefault(); calculate(); });
+    $("example").addEventListener("click", () => {
+      $("formula").value = "NaCl";
+      if (mode === "mass") { $("conc").value = "0.250"; $("concu").value = "M"; }
+      else { $("mass").value = "5.85"; $("massu").value = "g"; }
+      $("vol").value = "500.0"; $("volu").value = "mL";
+      calculate();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>pH Calculator: pH, pOH, [H+], [OH-], Strong &amp; Weak Acids | ChemWorked</title>
+  <meta name="description" content="Free pH calculator with steps. Convert between pH, pOH, [H+] and [OH-], and find the pH of strong acids and bases or weak acids and bases from Ka or Kb, including the 5% rule check.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Worked</span></a>
+      <nav><a href="./#tools">All calculators</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>pH calculator</h1>
+    <p class="lead">Convert between pH, pOH, [H⁺] and [OH⁻], or find the pH of a strong or weak acid or base. Every step is shown, with the log sig fig rule applied.</p>
+
+    <div class="card">
+      <div class="tabs" role="tablist">
+        <button type="button" role="tab" aria-selected="true" data-tab="convert">Convert</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="strong">Strong acid / base</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="weak">Weak acid / base</button>
+      </div>
+
+      <form id="tab-convert" autocomplete="off">
+        <div class="row">
+          <div style="flex: 0 0 180px">
+            <label for="cv-kind">I know</label>
+            <select id="cv-kind">
+              <option value="h">[H⁺] (M)</option>
+              <option value="oh">[OH⁻] (M)</option>
+              <option value="ph">pH</option>
+              <option value="poh">pOH</option>
+            </select>
+          </div>
+          <div>
+            <label for="cv-val">Value</label>
+            <input type="text" id="cv-val" inputmode="decimal" placeholder="e.g. 3.2e-4 or 4.50">
+          </div>
+        </div>
+        <button type="submit" style="margin-top: 12px">Calculate</button>
+      </form>
+
+      <form id="tab-strong" autocomplete="off" hidden>
+        <div class="row">
+          <div style="flex: 0 0 180px">
+            <label for="st-kind">Type</label>
+            <select id="st-kind"><option value="acid">Strong acid</option><option value="base">Strong base</option></select>
+          </div>
+          <div>
+            <label for="st-c">Concentration (M)</label>
+            <input type="text" id="st-c" inputmode="decimal" placeholder="e.g. 0.050">
+          </div>
+          <div style="flex: 1 1 100%">
+            <label for="st-n">How many H⁺ or OH⁻ does each one release?</label>
+            <select id="st-n"><option value="1">1, e.g. HCl, HNO₃, NaOH, KOH</option><option value="2">2, e.g. Ca(OH)₂, Ba(OH)₂</option><option value="3">3</option></select>
+          </div>
+        </div>
+        <p class="hint">Count the H⁺ or OH⁻ in the formula. Ca(OH)₂ has two OH groups, so 0.050 M Ca(OH)₂ gives [OH⁻] = 2 × 0.050 = 0.10 M.<br>
+        Strong acids: HCl, HBr, HI, HNO₃, HClO₄, H₂SO₄ (count 1 for its first H). Strong bases: NaOH, KOH, LiOH (1), and Ca(OH)₂, Sr(OH)₂, Ba(OH)₂ (2).</p>
+        <button type="submit" style="margin-top: 4px">Calculate</button>
+      </form>
+
+      <form id="tab-weak" autocomplete="off" hidden>
+        <div class="row">
+          <div style="flex: 0 0 180px">
+            <label for="wk-kind">Type</label>
+            <select id="wk-kind"><option value="acid">Weak acid (Ka)</option><option value="base">Weak base (Kb)</option></select>
+          </div>
+          <div>
+            <label for="wk-c">Initial concentration (M)</label>
+            <input type="text" id="wk-c" inputmode="decimal" placeholder="e.g. 0.10">
+          </div>
+          <div>
+            <label for="wk-k" id="wk-k-label">Ka</label>
+            <input type="text" id="wk-k" inputmode="decimal" placeholder="e.g. 1.8e-5">
+          </div>
+        </div>
+        <div class="examples">
+          <button type="button" data-k="acid|0.10|1.8e-5">Acetic acid, 0.10 M</button>
+          <button type="button" data-k="acid|0.050|6.8e-4">HF, 0.050 M</button>
+          <button type="button" data-k="base|0.20|1.8e-5">Ammonia, 0.20 M</button>
+        </div>
+        <button type="submit" style="margin-top: 12px">Calculate</button>
+      </form>
+
+      <div id="ph-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>pH formulas (at 25 °C)</h2>
+      <ul>
+        <li><span class="math">pH = −log[H⁺]</span> &nbsp; and &nbsp; <span class="math">[H⁺] = 10<sup>−pH</sup></span></li>
+        <li><span class="math">pOH = −log[OH⁻]</span> &nbsp; and &nbsp; <span class="math">[OH⁻] = 10<sup>−pOH</sup></span></li>
+        <li><span class="math">pH + pOH = 14.00</span> &nbsp; and &nbsp; <span class="math">[H⁺][OH⁻] = Kw = 1.0 × 10⁻¹⁴</span></li>
+      </ul>
+
+      <h3>Sig figs for logs</h3>
+      <p>The number of <strong>decimal places</strong> in a pH equals the number of <strong>sig figs</strong> in the concentration. [H⁺] = 3.2 × 10⁻⁴ M (2 sig figs) gives pH = 3.49 (2 decimal places). The digit before the decimal point only shows the power of ten.</p>
+
+      <h3>Strong vs. weak</h3>
+      <p>Strong acids and bases ionize completely, so [H⁺] (or [OH⁻]) equals the concentration times the number of H⁺ or OH⁻ per formula. Weak ones only partly ionize, so you use an ICE table with Ka or Kb:</p>
+      <p><span class="math">Ka = x² ÷ (C − x)</span></p>
+      <p>If x is less than 5% of C, you can use the shortcut <span class="math">x ≈ √(Ka × C)</span>. This calculator always solves the full quadratic and tells you whether the shortcut would have been OK.</p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemWorked — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain, formatSigFigs } = Chem;
+    const out = $("ph-result");
+    const LOG = Math.log10;
+
+    // A concentration with n sig figs gives a p-value with n decimal places (and the reverse).
+    const pFmt = (p, dp) => p.toFixed(Math.max(dp, 1));
+    const decimals = (raw) => (raw.includes(".") ? raw.trim().split(".")[1].replace(/[^\d].*$/, "").length : 0);
+
+    function readPos(id, label) {
+      const info = Chem.countSigFigs($(id).value);
+      if (!info || !(info.parsed.value > 0)) throw new Error(`Enter a positive number for ${label}.`);
+      return { raw: $(id).value.trim(), value: info.parsed.value, sf: info.count };
+    }
+
+    function summary(ph, poh, h, oh, dp, sf) {
+      const label = ph < 6.995 ? "acidic" : ph > 7.005 ? "basic" : "neutral";
+      return `
+        <p class="answer">pH = ${pFmt(ph, dp)} <small>${label}</small></p>
+        <div class="table-scroll"><table>
+          <tbody>
+            <tr><td>pH</td><td class="num">${pFmt(ph, dp)}</td><td>pOH</td><td class="num">${pFmt(poh, dp)}</td></tr>
+            <tr><td>[H⁺]</td><td class="num">${formatSigFigs(h, sf)} M</td><td>[OH⁻]</td><td class="num">${formatSigFigs(oh, sf)} M</td></tr>
+          </tbody>
+        </table></div>`;
+    }
+    const list = (steps) => `<ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>`;
+
+    function convert() {
+      const kind = $("cv-kind").value;
+      const raw = $("cv-val").value.trim();
+      const info = Chem.countSigFigs(raw);
+      if (!info) throw new Error("Enter a number.");
+      const v = info.parsed.value;
+      let ph, poh, h, oh, sf, dp;
+      const steps = [];
+      if (kind === "h" || kind === "oh") {
+        if (!(v > 0)) throw new Error("A concentration must be positive.");
+        sf = info.count; dp = sf;
+        if (kind === "h") {
+          h = v; ph = -LOG(h); poh = 14 - ph; oh = 1e-14 / h;
+          steps.push(`<span class="math">pH = −log(${esc(raw)}) = ${plain(ph, 5)}</span> → ${pFmt(ph, dp)} (${sf} sig fig${sf === 1 ? "" : "s"} in [H⁺] → ${dp} decimal place${dp === 1 ? "" : "s"})`);
+          steps.push(`<span class="math">pOH = 14.00 − ${pFmt(ph, dp)} = ${pFmt(poh, dp)}</span>`);
+          steps.push(`<span class="math">[OH⁻] = 1.0 × 10⁻¹⁴ ÷ ${esc(raw)} = ${formatSigFigs(oh, sf)} M</span>`);
+        } else {
+          oh = v; poh = -LOG(oh); ph = 14 - poh; h = 1e-14 / oh;
+          steps.push(`<span class="math">pOH = −log(${esc(raw)}) = ${plain(poh, 5)}</span> → ${pFmt(poh, dp)}`);
+          steps.push(`<span class="math">pH = 14.00 − ${pFmt(poh, dp)} = ${pFmt(ph, dp)}</span>`);
+          steps.push(`<span class="math">[H⁺] = 1.0 × 10⁻¹⁴ ÷ ${esc(raw)} = ${formatSigFigs(h, sf)} M</span>`);
+        }
+      } else {
+        dp = decimals(raw); sf = Math.max(dp, 1);
+        if (kind === "ph") {
+          ph = v; poh = 14 - ph; h = Math.pow(10, -ph); oh = Math.pow(10, -poh);
+          steps.push(`<span class="math">[H⁺] = 10<sup>−${esc(raw)}</sup> = ${formatSigFigs(h, sf)} M</span> (${dp} decimal place${dp === 1 ? "" : "s"} in pH → ${sf} sig fig${sf === 1 ? "" : "s"})`);
+          steps.push(`<span class="math">pOH = 14.00 − ${esc(raw)} = ${pFmt(poh, dp)}</span>`);
+          steps.push(`<span class="math">[OH⁻] = 10<sup>−${pFmt(poh, dp)}</sup> = ${formatSigFigs(oh, sf)} M</span>`);
+        } else {
+          poh = v; ph = 14 - poh; oh = Math.pow(10, -poh); h = Math.pow(10, -ph);
+          steps.push(`<span class="math">[OH⁻] = 10<sup>−${esc(raw)}</sup> = ${formatSigFigs(oh, sf)} M</span>`);
+          steps.push(`<span class="math">pH = 14.00 − ${esc(raw)} = ${pFmt(ph, dp)}</span>`);
+          steps.push(`<span class="math">[H⁺] = 10<sup>−${pFmt(ph, dp)}</sup> = ${formatSigFigs(h, sf)} M</span>`);
+        }
+      }
+      out.innerHTML = summary(ph, poh, h, oh, dp, sf) + list(steps);
+    }
+
+    function strong() {
+      const kind = $("st-kind").value;
+      const c = readPos("st-c", "the concentration");
+      const n = parseInt($("st-n").value, 10);
+      const sf = c.sf;
+      const ion = c.value * n;
+      const steps = [];
+      let ph, poh, h, oh;
+      if (kind === "acid") {
+        h = ion; ph = -LOG(h); poh = 14 - ph; oh = 1e-14 / h;
+        steps.push(`A strong acid ionizes completely: <span class="math">[H⁺] = ${n > 1 ? n + " × " : ""}${esc(c.raw)} M = ${formatSigFigs(h, sf)} M</span>`);
+        steps.push(`<span class="math">pH = −log(${formatSigFigs(h, sf)}) = ${pFmt(ph, sf)}</span>`);
+      } else {
+        oh = ion; poh = -LOG(oh); ph = 14 - poh; h = 1e-14 / oh;
+        steps.push(`A strong base dissociates completely: <span class="math">[OH⁻] = ${n > 1 ? n + " × " : ""}${esc(c.raw)} M = ${formatSigFigs(oh, sf)} M</span>`);
+        steps.push(`<span class="math">pOH = −log(${formatSigFigs(oh, sf)}) = ${pFmt(poh, sf)}</span>`);
+        steps.push(`<span class="math">pH = 14.00 − ${pFmt(poh, sf)} = ${pFmt(ph, sf)}</span>`);
+      }
+      let note = "";
+      if (ion < 1e-6) note = `<p class="hint">Very dilute: below about 10⁻⁶ M, the H⁺ and OH⁻ from water itself matter, so the real pH is closer to 7 than this simple answer.</p>`;
+      out.innerHTML = summary(ph, poh, h, oh, sf, sf) + list(steps) + note;
+    }
+
+    function weak() {
+      const kind = $("wk-kind").value;
+      const c = readPos("wk-c", "the concentration");
+      const k = readPos("wk-k", kind === "acid" ? "Ka" : "Kb");
+      const sf = Math.min(c.sf, k.sf);
+      const K = k.value, C = c.value;
+      const x = (-K + Math.sqrt(K * K + 4 * K * C)) / 2;
+      const approx = Math.sqrt(K * C);
+      const pct = (approx / C) * 100;
+      const sym = kind === "acid" ? "H⁺" : "OH⁻";
+      const Kname = kind === "acid" ? "Ka" : "Kb";
+      const reaction = kind === "acid" ? "HA ⇌ H⁺ + A⁻" : "B + H₂O ⇌ BH⁺ + OH⁻";
+      const steps = [
+        `Reaction: <span class="math">${reaction}</span>. ICE table: start with ${esc(c.raw)} M, change −x / +x, so at equilibrium <span class="math">[${sym}] = x</span> and the ${kind} is <span class="math">${esc(c.raw)} − x</span>.`,
+        `Set up: <span class="math">${Kname} = x² ÷ (${esc(c.raw)} − x) = ${esc(k.raw)}</span>`,
+        `Solve the quadratic <span class="math">x² + ${Kname}·x − ${Kname}·C = 0</span>: <span class="math">x = (−${Kname} + √(${Kname}² + 4·${Kname}·C)) ÷ 2 = ${formatSigFigs(x, sf + 1)} M</span>`,
+        `5% rule check: the shortcut <span class="math">x ≈ √(${Kname} × C) = ${formatSigFigs(approx, sf + 1)} M</span> is ${plain(pct, 2)}% of C, so the shortcut ${pct < 5 ? "<strong>would be OK</strong> (under 5%)" : "<strong>would not be OK</strong> (over 5%, use the quadratic)"}.`,
+      ];
+      let ph, poh, h, oh;
+      if (kind === "acid") {
+        h = x; ph = -LOG(h); poh = 14 - ph; oh = 1e-14 / h;
+        steps.push(`<span class="math">pH = −log(${formatSigFigs(h, sf + 1)}) = ${pFmt(ph, sf)}</span>`);
+      } else {
+        oh = x; poh = -LOG(oh); ph = 14 - poh; h = 1e-14 / oh;
+        steps.push(`<span class="math">pOH = −log(${formatSigFigs(oh, sf + 1)}) = ${pFmt(poh, sf)}</span>, so <span class="math">pH = 14.00 − ${pFmt(poh, sf)} = ${pFmt(ph, sf)}</span>`);
+      }
+      steps.push(`Percent ionization: <span class="math">x ÷ C × 100 = ${plain((x / C) * 100, 2)}%</span>`);
+      out.innerHTML = summary(ph, poh, h, oh, sf, sf) + list(steps);
+    }
+
+    const handlers = { convert, strong, weak };
+    Object.keys(handlers).forEach((t) => {
+      $("tab-" + t).addEventListener("submit", (e) => {
+        e.preventDefault();
+        try { handlers[t](); } catch (err) { out.innerHTML = `<p class="error">${esc(err.message)}</p>`; }
+      });
+    });
+    document.querySelectorAll(".tabs button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tabs button").forEach((b) => b.setAttribute("aria-selected", b === btn));
+        Object.keys(handlers).forEach((t) => { $("tab-" + t).hidden = t !== btn.dataset.tab; });
+        out.innerHTML = "";
+      });
+    });
+    $("wk-kind").addEventListener("change", () => { $("wk-k-label").textContent = $("wk-kind").value === "acid" ? "Ka" : "Kb"; });
+    document.querySelectorAll("#tab-weak .examples button").forEach((b) => b.addEventListener("click", () => {
+      const [kind, c, k] = b.dataset.k.split("|");
+      $("wk-kind").value = kind; $("wk-c").value = c; $("wk-k").value = k;
+      $("wk-k-label").textContent = kind === "acid" ? "Ka" : "Kb";
+      $("tab-weak").requestSubmit();
+    }));
+  </script>
+</body>
+</html>

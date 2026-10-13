@@ -13,6 +13,7 @@
   --error-bg: #fdecea;
   --code-bg: #f1f3f5;
   --radius: 12px;
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%235b6270' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,6 +31,7 @@
     --error: #ff8a80;
     --error-bg: #3a1d1b;
     --code-bg: #232830;
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%239aa1ad' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   }
 }
 
@@ -108,6 +110,18 @@ input[type="text"], select {
   padding: 10px 12px;
   width: 100%;
 }
+/* Custom dropdown arrow so it sits evenly inside the box instead of against the edge */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: var(--chevron);
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px 8px;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
 input[type="text"]:focus, select:focus {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
@@ -116,7 +130,7 @@ input[type="text"]:focus, select:focus {
 
 .row { display: flex; gap: 10px; flex-wrap: wrap; }
 .row > * { flex: 1 1 140px; }
-.row .unit { flex: 0 0 96px; }
+.row .unit { flex: 0 0 112px; }
 
 button {
   font: inherit;
@@ -218,3 +232,6 @@ tfoot td { font-weight: 700; border-bottom: 0; }
   h1 { font-size: 1.6rem; }
   .card { padding: 16px; }
 }
+
+#tools h2 { margin: 28px 0 10px; font-size: 1.1rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+.tool-grid h3 { margin: 0 0 6px; font-size: 1.1rem; color: var(--accent); }

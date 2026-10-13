@@ -277,13 +277,123 @@
     return String(parseFloat(x.toFixed(maxDecimals)));
   }
 
+  // ---------- Equation balancing ----------
+
+  // Exact fractions with BigInt so balancing never suffers from rounding.
+  const babs = (a) => (a < 0n ? -a : a);
+  const bgcd = (a, b) => { a = babs(a); b = babs(b); while (b) [a, b] = [b, a % b]; return a; };
+  function frac(n, d = 1n) {
+    if (d < 0n) { n = -n; d = -d; }
+    const g = bgcd(n, d) || 1n;
+    return { n: n / g, d: d / g };
+  }
+  const fsub = (a, b) => frac(a.n * b.d - b.n * a.d, a.d * b.d);
+  const fmul = (a, b) => frac(a.n * b.n, a.d * b.d);
+  const fdiv = (a, b) => frac(a.n * b.d, a.d * b.n);
+
+  // Balances equations like "Fe + O2 -> Fe2O3". Returns { reactants, products, elements, matrix }.
+  function balanceEquation(input) {
+    const text = input.replace(/\s+/g, " ").trim();
+    const sides = text.split(/\s*(?:<?-+>|→|⟶|⇌|<=>|=)\s*/);
+    if (sides.length !== 2 || !sides[0] || !sides[1]) {
+      throw new Error('Write the equation with an arrow between reactants and products, like "H2 + O2 -> H2O".');
+    }
+    const parseSide = (side) => side.split(/\s*\+\s*/).map((raw) => {
+      const formula = raw.trim().replace(/^\d+\s*/, ""); // drop any coefficient the user typed
+      if (!formula) throw new Error("There's an empty spot next to a + sign.");
+      return { formula, ...parseFormula(formula) };
+    });
+    const reactants = parseSide(sides[0]);
+    const products = parseSide(sides[1]);
+    const species = [...reactants, ...products];
+
+    const elements = [];
+    species.forEach((s) => s.order.forEach((el) => { if (!elements.includes(el)) elements.push(el); }));
+    elements.forEach((el) => {
+      const left = reactants.some((s) => s.counts[el]);
+      const right = products.some((s) => s.counts[el]);
+      if (!left || !right) throw new Error(`${el} appears on only one side, so this equation can't be balanced. Check your formulas.`);
+    });
+
+    // One row per element: reactant counts positive, product counts negative. Solve matrix · x = 0.
+    const rows = elements.map((el) => species.map((s, j) =>
+      frac(BigInt((s.counts[el] || 0) * (j < reactants.length ? 1 : -1)))));
+    const n = species.length;
+    const pivots = [];
+    let r = 0;
+    for (let c = 0; c < n && r < rows.length; c++) {
+      let p = rows.findIndex((row, i) => i >= r && row[c].n !== 0n);
+      if (p === -1) continue;
+      [rows[r], rows[p]] = [rows[p], rows[r]];
+      const pv = rows[r][c];
+      rows[r] = rows[r].map((v) => fdiv(v, pv));
+      for (let i = 0; i < rows.length; i++) {
+        if (i !== r && rows[i][c].n !== 0n) {
+          const f = rows[i][c];
+          rows[i] = rows[i].map((v, k) => fsub(v, fmul(f, rows[r][k])));
+        }
+      }
+      pivots.push(c);
+      r++;
+    }
+    const free = [...Array(n).keys()].filter((c) => !pivots.includes(c));
+    if (free.length === 0) throw new Error("This equation can't be balanced. Check that the formulas are right.");
+    if (free.length > 1) throw new Error("This equation can be balanced in more than one way (it's really two reactions combined). Try splitting it up.");
+
+    const f = free[0];
+    const x = Array(n).fill(null);
+    x[f] = frac(1n);
+    pivots.forEach((c, i) => { x[c] = frac(-rows[i][f].n, rows[i][f].d); });
+    const lcm = x.reduce((acc, v) => (acc * v.d) / bgcd(acc, v.d), 1n);
+    let ints = x.map((v) => (v.n * lcm) / v.d);
+    const g = ints.reduce((acc, v) => bgcd(acc, v), 0n);
+    ints = ints.map((v) => v / g);
+    if (ints.every((v) => v <= 0n)) ints = ints.map((v) => -v);
+    if (ints.some((v) => v <= 0n)) throw new Error("This equation can't be balanced with these formulas. Check for a typo or a missing product.");
+
+    const coefs = ints.map(Number);
+    reactants.forEach((s, i) => { s.coef = coefs[i]; });
+    products.forEach((s, i) => { s.coef = coefs[reactants.length + i]; });
+    const tally = elements.map((el) => ({
+      element: el,
+      left: reactants.reduce((t, s) => t + s.coef * (s.counts[el] || 0), 0),
+      right: products.reduce((t, s) => t + s.coef * (s.counts[el] || 0), 0),
+    }));
+    return { reactants, products, elements, tally };
+  }
+
+  // ---------- Empirical formula ----------
+
+  // items: [{ symbol, mass }] where mass is grams or percent (percent = grams in a 100 g sample).
+  function empiricalFormula(items) {
+    if (items.length < 2) throw new Error("Enter at least two elements.");
+    const rows = items.map(({ symbol, mass }) => {
+      const el = ELEMENTS[symbol];
+      if (!el) throw new Error(`"${symbol}" isn't an element symbol. Use a capital first letter, like Cl.`);
+      if (!(mass > 0)) throw new Error(`Enter a positive amount for ${symbol}.`);
+      return { symbol, mass, atomicMass: el.mass, moles: mass / el.mass };
+    });
+    const smallest = Math.min(...rows.map((r) => r.moles));
+    rows.forEach((r) => { r.ratio = r.moles / smallest; });
+    let multiplier = 1;
+    for (let m = 1; m <= 8; m++) {
+      if (rows.every((r) => Math.abs(r.ratio * m - Math.round(r.ratio * m)) < 0.1)) { multiplier = m; break; }
+      if (m === 8) multiplier = null;
+    }
+    if (multiplier === null) throw new Error("The mole ratios don't come out close to whole numbers. Check your data.");
+    rows.forEach((r) => { r.subscript = Math.round(r.ratio * multiplier); });
+    const formula = rows.map((r) => r.symbol + (r.subscript > 1 ? r.subscript : "")).join("");
+    const empiricalMass = rows.reduce((t, r) => t + r.subscript * r.atomicMass, 0);
+    return { rows, smallest, multiplier, formula, empiricalMass };
+  }
+
   // Escapes text before it goes into innerHTML (error messages can echo what the user typed).
   function esc(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
   const Chem = {
-    esc, ELEMENTS, parseFormula, molarMass,
+    esc, ELEMENTS, parseFormula, molarMass, balanceEquation, empiricalFormula,
     parseNumberString, countSigFigs, lastDecimalPlace, formatSigFigs, roundToPlace, sigFigArithmetic,
     toSuperscript, plain,
   };
