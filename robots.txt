@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://kingsleysung.github.io/chemworked/sitemap.xml

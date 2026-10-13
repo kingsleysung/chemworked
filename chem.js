@@ -1,4 +1,4 @@
-// ChemSteps shared chemistry logic: atomic masses, formula parsing, significant figures.
+// ChemWorked shared chemistry logic: atomic masses, formula parsing, significant figures.
 // Works in the browser (window.Chem) and in Node (module.exports) so it can be tested.
 
 (function (root) {
