@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Calibration Curve Calculator with Uncertainty and Steps | ChemWorked</title>
+  <meta name="description" content="Free calibration curve calculator: paste your standards, get the least-squares line, R², the unknown's concentration and its uncertainty with a 95% confidence interval. Shows every step, like a lab report.">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    textarea {
+      font: inherit;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+    }
+    textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+    .plot { width: 100%; height: auto; margin-top: 16px; display: block; }
+    .plot text { fill: var(--muted); font-size: 12px; font-family: system-ui, sans-serif; }
+    .plot .axis { stroke: var(--border); }
+    .plot .line { stroke: var(--accent); stroke-width: 2; }
+    .plot .std { fill: var(--accent); }
+    .plot .unk { fill: var(--error); }
+    .plot .guide { stroke: var(--error); stroke-dasharray: 4 4; }
+    .legend { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
+    .legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+    .warn { background: var(--accent-soft); border-radius: 8px; padding: 10px 14px; }
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="./">Chem<span>Worked</span></a>
+      <nav><a href="./#tools">All calculators</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h1>Calibration curve calculator</h1>
+    <p class="lead">Paste your standards (you can copy two columns straight from Excel), add your unknown's readings, and get the line, R², the unknown's concentration and its uncertainty, with every step shown like a lab report.</p>
+
+    <div class="card">
+      <form id="cal-form" autocomplete="off">
+        <div class="row" style="margin-bottom: 14px">
+          <div>
+            <label for="stds">Standards: concentration, signal (one per line)</label>
+            <textarea id="stds" spellcheck="false" placeholder="0.00, 0.002&#10;1.00, 0.198&#10;2.00, 0.392&#10;..."></textarea>
+            <p class="hint">Signal is whatever you measured: absorbance, peak area, peak-area ratio, etc. Separate the two numbers with a comma, space or tab.</p>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom: 14px">
+          <div style="flex: 1 1 220px">
+            <label for="unk">Unknown's signal (one or more replicate readings)</label>
+            <input type="text" id="unk" inputmode="decimal" placeholder="e.g. 0.512, 0.508, 0.515">
+          </div>
+          <div style="flex: 0 0 150px">
+            <label for="unit">Concentration unit</label>
+            <select id="unit">
+              <option>mg/L</option><option>ppm</option><option>µg/mL</option><option>M</option><option>mM</option><option>µM</option><option>% (w/v)</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="gap: 10px">
+          <button type="submit" style="flex: 0 0 auto">Calculate</button>
+          <button type="button" class="secondary" id="example" style="flex: 0 0 auto">Try an example</button>
+          <button type="button" class="secondary" id="clear" style="flex: 0 0 auto">Clear</button>
+        </div>
+      </form>
+      <div id="cal-result" class="result" aria-live="polite"></div>
+    </div>
+
+    <section class="explain">
+      <h2>How a calibration curve works</h2>
+      <p>You measure the signal of several standards with known concentrations, fit the best straight line through them, then use that line to turn the unknown's signal into a concentration. For UV-Vis this is Beer's law: absorbance is proportional to concentration, <span class="math">A = εbc</span>.</p>
+
+      <h3>The least-squares line</h3>
+      <p>With <span class="math">x̄</span> and <span class="math">ȳ</span> as the averages of the concentrations and signals:</p>
+      <p><span class="math math-block">slope m = Σ(x − x̄)(y − ȳ) ÷ Σ(x − x̄)²<br>intercept b = ȳ − m·x̄</span></p>
+
+      <h3>The uncertainty of your unknown</h3>
+      <p>The scatter of the standards around the line is <span class="math">s_y = √( Σ residual² ÷ (n − 2) )</span>. The standard uncertainty of the unknown's concentration is then:</p>
+      <p><span class="math math-block">s_x = (s_y ÷ |m|) · √( 1/k + 1/n + (ȳ_unk − ȳ)² ÷ (m² · Σ(x − x̄)²) )</span></p>
+      <p>where <strong>k</strong> is the number of replicate readings of the unknown and <strong>n</strong> is the number of standards. Multiply by Student's t (with n − 2 degrees of freedom) for a 95% confidence interval.</p>
+
+      <h3>Tips for a better result</h3>
+      <ul>
+        <li><strong>Read the unknown more than once.</strong> More replicates (bigger k) shrink the 1/k term, often the biggest one.</li>
+        <li><strong>Aim for the middle of the curve.</strong> The uncertainty is smallest when the unknown's signal is near the average signal of the standards. Dilute the unknown if it's above your highest standard.</li>
+        <li><strong>Don't extrapolate.</strong> Outside your standards you don't know if the line is still straight.</li>
+        <li><strong>R² isn't everything.</strong> A curve can have R² = 0.998 and still be bent. Look at the residuals: they should be small and random, not a smile or frown shape.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      ChemWorked — free chemistry calculators. Made by Kingsley, a biochemistry student. Always check results against your course's rules.
+    </div>
+  </footer>
+
+  <script src="chem.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const { esc, plain, formatSigFigs, withUncertainty } = Chem;
+    const num = (s) => Number(s.replace(/,$/, ""));
+    const f4 = (x) => formatSigFigs(x, 4);
+
+    function parseStandards(text) {
+      const points = [];
+      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      for (let i = 0; i < lines.length; i++) {
+        const parts = lines[i].split(/[\s,;]+/).filter(Boolean);
+        if (parts.length !== 2 || !parts.every((p) => isFinite(num(p)))) {
+          // Allow a header row from Excel as the first line.
+          if (i === 0 && parts.some((p) => !isFinite(num(p)))) continue;
+          return { error: `Line ${i + 1} ("${esc(lines[i])}") should be two numbers: concentration and signal.` };
+        }
+        points.push({ x: num(parts[0]), y: num(parts[1]) });
+      }
+      return { points };
+    }
+
+    function plot(fit, unit) {
+      const W = 640, H = 300, L = 56, R = 16, T = 14, B = 40;
+      const xs = fit.rows.map((r) => r.x).concat(fit.unknown ? [fit.unknown.x] : []);
+      const ys = fit.rows.map((r) => r.y).concat(fit.unknown ? [fit.unknown.yu] : []);
+      const x0 = Math.min(0, ...xs), x1 = Math.max(...xs) * 1.05 || 1;
+      const y0 = Math.min(0, ...ys), y1 = Math.max(...ys) * 1.08 || 1;
+      const sx = (x) => L + (x - x0) / (x1 - x0) * (W - L - R);
+      const sy = (y) => H - B - (y - y0) / (y1 - y0) * (H - T - B);
+      const ticks = (a, b) => [0, 1, 2, 3, 4].map((i) => a + (b - a) * i / 4);
+      let g = `<line class="axis" x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}"/><line class="axis" x1="${L}" y1="${T}" x2="${L}" y2="${H - B}"/>`;
+      for (const t of ticks(x0, x1)) g += `<text x="${sx(t)}" y="${H - B + 16}" text-anchor="middle">${formatSigFigs(t, 2)}</text>`;
+      for (const t of ticks(y0, y1)) g += `<text x="${L - 6}" y="${sy(t) + 4}" text-anchor="end">${formatSigFigs(t, 2)}</text>`;
+      g += `<text x="${(L + W - R) / 2}" y="${H - 4}" text-anchor="middle">Concentration (${esc(unit)})</text>`;
+      g += `<line class="line" x1="${sx(x0)}" y1="${sy(fit.m * x0 + fit.b)}" x2="${sx(x1)}" y2="${sy(fit.m * x1 + fit.b)}"/>`;
+      for (const r of fit.rows) g += `<circle class="std" cx="${sx(r.x)}" cy="${sy(r.y)}" r="4.5"/>`;
+      if (fit.unknown) {
+        const u = fit.unknown;
+        g += `<line class="guide" x1="${L}" y1="${sy(u.yu)}" x2="${sx(u.x)}" y2="${sy(u.yu)}"/><line class="guide" x1="${sx(u.x)}" y1="${sy(u.yu)}" x2="${sx(u.x)}" y2="${H - B}"/>`;
+        g += `<circle class="unk" cx="${sx(u.x)}" cy="${sy(u.yu)}" r="5.5"/>`;
+      }
+      return `<svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="Calibration curve plot">${g}</svg>
+        <p class="legend"><span class="dot" style="background: var(--accent)"></span>standards &nbsp; <span class="dot" style="background: var(--error)"></span>unknown (average signal)</p>`;
+    }
+
+    function solve() {
+      const out = $("cal-result");
+      const unit = $("unit").value;
+      const parsed = parseStandards($("stds").value);
+      if (parsed.error) { out.innerHTML = `<p class="error">${parsed.error}</p>`; return; }
+      const unkParts = $("unk").value.split(/[\s,;]+/).filter(Boolean);
+      if (unkParts.some((p) => !isFinite(num(p)))) { out.innerHTML = `<p class="error">The unknown's readings should be numbers separated by commas or spaces.</p>`; return; }
+      const unk = unkParts.map(num);
+
+      const fit = Chem.calibration(parsed.points, unk);
+      if (fit.error) { out.innerHTML = `<p class="error">${fit.error}</p>`; return; }
+      if (fit.m === 0) { out.innerHTML = `<p class="error">The slope is zero: the signal doesn't change with concentration, so the line can't be used.</p>`; return; }
+
+      const sign = (v) => (v < 0 ? `− ${f4(-v)}` : `+ ${f4(v)}`);
+      const table = `<div class="table-scroll"><table>
+        <thead><tr><th class="num">x (${esc(unit)})</th><th class="num">y</th><th class="num">x − x̄</th><th class="num">(x − x̄)²</th><th class="num">(x − x̄)(y − ȳ)</th><th class="num">residual</th></tr></thead>
+        <tbody>${fit.rows.map((r) => `<tr><td class="num">${plain(r.x)}</td><td class="num">${plain(r.y)}</td><td class="num">${f4(r.dx)}</td><td class="num">${f4(r.dx ** 2)}</td><td class="num">${f4(r.dx * r.dy)}</td><td class="num">${f4(r.resid)}</td></tr>`).join("")}</tbody>
+        <tfoot><tr><td class="num">x̄ = ${f4(fit.xbar)}</td><td class="num">ȳ = ${f4(fit.ybar)}</td><td></td><td class="num">${f4(fit.Sxx)}</td><td class="num">${f4(fit.Sxy)}</td><td class="num">Σ² = ${f4(fit.SSres)}</td></tr></tfoot>
+      </table></div>`;
+
+      const steps = [
+        `Find the averages and the sums of squares (table below), with n = ${fit.n} standards.${table}`,
+        `Slope and intercept:<span class="math math-block">m = Σ(x − x̄)(y − ȳ) ÷ Σ(x − x̄)² = ${f4(fit.Sxy)} ÷ ${f4(fit.Sxx)} = ${f4(fit.m)} per ${esc(unit)}<br>b = ȳ − m·x̄ = ${f4(fit.ybar)} − (${f4(fit.m)})(${f4(fit.xbar)}) = ${f4(fit.b)}</span>`,
+        `How well the line fits:<span class="math math-block">s_y = √(Σ residual² ÷ (n − 2)) = √(${f4(fit.SSres)} ÷ ${fit.df}) = ${f4(fit.sy)}<br>R² = 1 − Σ residual² ÷ Σ(y − ȳ)² = 1 − ${f4(fit.SSres)} ÷ ${f4(fit.Syy)} = ${formatSigFigs(fit.r2, 5)}<br>s_m = s_y ÷ √Σ(x − x̄)² = ${f4(fit.sm)} &nbsp; s_b = s_y·√(Σx² ÷ (n·Σ(x − x̄)²)) = ${f4(fit.sb)}</span>`,
+      ];
+
+      let headline = `<p class="answer">y = ${f4(fit.m)}x ${sign(fit.b)} <small>R² = ${formatSigFigs(fit.r2, 5)}</small></p>`;
+      const notes = [];
+      if (fit.r2 < 0.99) notes.push(`R² is below 0.99. Check for a typo, a bad standard, or a curve that isn't straight at high concentrations.`);
+
+      if (fit.unknown) {
+        const u = fit.unknown;
+        const ci = withUncertainty(u.x, u.ci);
+        headline = `<p class="answer">${ci.value} ± ${ci.unc} ${esc(unit)} <small>(95% confidence)</small></p>
+          <p style="margin: 0; color: var(--muted)">Line: y = ${f4(fit.m)}x ${sign(fit.b)}, R² = ${formatSigFigs(fit.r2, 5)}</p>`;
+        steps.push(`Concentration of the unknown from its average signal (k = ${u.k} reading${u.k === 1 ? "" : "s"}):<span class="math math-block">ȳ_unk = ${f4(u.yu)}<br>x = (ȳ_unk − b) ÷ m = (${f4(u.yu)} ${sign(-fit.b)}) ÷ ${f4(fit.m)} = ${f4(u.x)} ${esc(unit)}</span>`);
+        steps.push(`Uncertainty of the unknown:<span class="math math-block">s_x = (s_y ÷ |m|) · √(1/k + 1/n + (ȳ_unk − ȳ)² ÷ (m²·Σ(x − x̄)²))<br>s_x = (${f4(fit.sy)} ÷ ${f4(Math.abs(fit.m))}) · √(1/${u.k} + 1/${fit.n} + (${f4(u.yu - fit.ybar)})² ÷ ((${f4(fit.m)})²·${f4(fit.Sxx)})) = ${f4(u.sx)} ${esc(unit)}</span>`);
+        steps.push(`95% confidence interval, with Student's t for n − 2 = ${fit.df} degrees of freedom (t = ${fit.t}):<span class="math math-block">± t·s_x = ${fit.t} × ${f4(u.sx)} = ${f4(u.ci)} ${esc(unit)}</span>Round the uncertainty to 2 significant figures and the answer to the same decimal place: <strong>${ci.value} ± ${ci.unc} ${esc(unit)}</strong>`);
+        if (u.outside) notes.push(`The unknown is outside the range of your standards, so this is an extrapolation. Dilute the sample (or add a standard) so it falls inside the curve.`);
+        if (u.k === 1) notes.push(`Only one reading of the unknown. Measuring it 2–3 times would make the uncertainty smaller.`);
+      } else {
+        notes.push(`Add the unknown's reading(s) above to get its concentration and uncertainty.`);
+      }
+
+      out.innerHTML = `${headline}
+        ${plot(fit, unit)}
+        <ol class="steps">${steps.map((s) => `<li>${s}</li>`).join("")}</ol>
+        ${notes.map((n) => `<p class="warn">${n}</p>`).join("")}`;
+    }
+
+    $("cal-form").addEventListener("submit", (e) => { e.preventDefault(); solve(); });
+    $("example").addEventListener("click", () => {
+      $("stds").value = "0.00, 0.002\n1.00, 0.198\n2.00, 0.392\n3.00, 0.601\n4.00, 0.790\n5.00, 0.995";
+      $("unk").value = "0.512, 0.508, 0.515";
+      $("unit").value = "mg/L";
+      solve();
+    });
+    $("clear").addEventListener("click", () => {
+      $("stds").value = ""; $("unk").value = "";
+      $("cal-result").innerHTML = "";
+    });
+  </script>
+</body>
+</html>

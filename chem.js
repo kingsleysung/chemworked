@@ -388,6 +388,63 @@
   }
 
   // Escapes text before it goes into innerHTML (error messages can echo what the user typed).
+  // Two-tailed Student's t at 95% confidence, indexed by degrees of freedom.
+  const T95 = [NaN, 12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.160, 2.145,
+    2.131, 2.120, 2.110, 2.101, 2.093, 2.086, 2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042];
+  function t95(df) {
+    if (df < 1) return NaN;
+    if (df <= 30) return T95[df];
+    if (df <= 40) return 2.021;
+    if (df <= 60) return 2.000;
+    if (df <= 120) return 1.980;
+    return 1.960;
+  }
+
+  // Least-squares calibration line y = m·x + b, with the standard uncertainty of an unknown read off the line
+  // (the usual analytical chemistry formula, e.g. Harris "Quantitative Chemical Analysis", ch. 4).
+  // points: [{x, y}], unknownYs: replicate signals of the unknown (may be empty).
+  function calibration(points, unknownYs = []) {
+    const n = points.length;
+    if (n < 3) return { error: "Enter at least 3 standards to fit a line and estimate its uncertainty." };
+    const xbar = points.reduce((s, p) => s + p.x, 0) / n;
+    const ybar = points.reduce((s, p) => s + p.y, 0) / n;
+    let Sxx = 0, Sxy = 0, Syy = 0, sumX2 = 0;
+    for (const p of points) {
+      Sxx += (p.x - xbar) ** 2;
+      Sxy += (p.x - xbar) * (p.y - ybar);
+      Syy += (p.y - ybar) ** 2;
+      sumX2 += p.x ** 2;
+    }
+    if (Sxx === 0) return { error: "All the standards have the same concentration, so a line can't be fit." };
+    const m = Sxy / Sxx;
+    const b = ybar - m * xbar;
+    const rows = points.map((p) => ({ ...p, dx: p.x - xbar, dy: p.y - ybar, resid: p.y - (m * p.x + b) }));
+    const SSres = rows.reduce((s, r) => s + r.resid ** 2, 0);
+    const sy = Math.sqrt(SSres / (n - 2));
+    const sm = sy / Math.sqrt(Sxx);
+    const sb = sy * Math.sqrt(sumX2 / (n * Sxx));
+    const r2 = Syy === 0 ? NaN : 1 - SSres / Syy;
+    const fit = { n, xbar, ybar, Sxx, Sxy, Syy, sumX2, m, b, rows, SSres, sy, sm, sb, r2, df: n - 2, t: t95(n - 2) };
+
+    const k = unknownYs.length;
+    if (k > 0 && m !== 0) {
+      const yu = unknownYs.reduce((s, y) => s + y, 0) / k;
+      const x = (yu - b) / m;
+      const sx = (sy / Math.abs(m)) * Math.sqrt(1 / k + 1 / n + (yu - ybar) ** 2 / (m ** 2 * Sxx));
+      const xs = points.map((p) => p.x);
+      fit.unknown = { k, yu, x, sx, ci: fit.t * sx, outside: x < Math.min(...xs) || x > Math.max(...xs) };
+    }
+    return fit;
+  }
+
+  // Round a value and its uncertainty together: uncertainty to 2 sig figs, value to the same decimal place.
+  function withUncertainty(x, u) {
+    if (!isFinite(x) || !isFinite(u) || u <= 0) return { value: plain(x), unc: plain(u) };
+    const place = Math.floor(Math.log10(u)) - 1; // decimal place of the 2nd sig fig of u
+    const fix = (v) => (place < 0 ? (Math.round(v / 10 ** place) * 10 ** place).toFixed(-place) : String(Math.round(v / 10 ** place) * 10 ** place));
+    return { value: fix(x), unc: fix(u) };
+  }
+
   function esc(s) {
     return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
@@ -395,7 +452,7 @@
   const Chem = {
     esc, ELEMENTS, parseFormula, molarMass, balanceEquation, empiricalFormula,
     parseNumberString, countSigFigs, lastDecimalPlace, formatSigFigs, roundToPlace, sigFigArithmetic,
-    toSuperscript, plain,
+    toSuperscript, plain, t95, calibration, withUncertainty,
   };
 
   if (typeof module !== "undefined" && module.exports) module.exports = Chem;
